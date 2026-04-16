@@ -34,7 +34,9 @@
     "editor.wordWrap": "on",
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.renderWhitespace": "all",
-    "files.trimTrailingWhitespace": false
+    "files.trimTrailingWhitespace": false,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
   },
   "terminal.integrated.defaultProfile.linux": "bash",
   "vsnotes.noteTitleConvertSpaces": " ",
