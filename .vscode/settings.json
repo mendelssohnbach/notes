@@ -38,7 +38,7 @@
   },
   "terminal.integrated.defaultProfile.linux": "bash",
   "vsnotes.noteTitleConvertSpaces": " ",
-  "vsnotes.defaultNoteTitle": "{dt} {title}.{ext}",
+  "vsnotes.defaultNoteTitle": "{dt}_{title}.{ext}",
   "vsnotes.tokens": [
     {
       "type": "datetime",
