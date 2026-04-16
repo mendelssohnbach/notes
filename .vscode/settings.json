@@ -1,0 +1,40 @@
+{
+  "debug.inlineValues": "on",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.shellcheck": "explicit"
+  },
+  "editor.detectIndentation": false,
+  "editor.fontSize": 15.5,
+  "editor.formatOnSave": true,
+  "editor.fontFamily": "'UDEV Gothic','Droid Sans Mono', 'monospace', monospace",
+  "editor.guides.bracketPairs": true,
+  "editor.linkedEditing": true,
+  "editor.wordWrap": "bounded",
+  "explorer.compactFolders": false,
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "on",
+    "strings": "on"
+  },
+  "files.autoSave": "onFocusChange",
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "markdown.copyFiles.destination": {
+    "/notes/*.md": "/notes/assets/${documentBaseName}/${documentBaseName}-${unixTime}.${fileExtName}"
+  },
+  "markdown.editor.drop.copyIntoWorkspace": "mediaFiles",
+  "markdown.editor.filePaste.copyIntoWorkspace": "mediaFiles",
+  "markdown-preview-enhanced.printBackground": true,
+  "terminal.integrated.copyOnSelection": true,
+  "terminal.integrated.fontFamily": "'FiraCode Nerd Font Mono'",
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.renderWhitespace": "all",
+    "files.trimTrailingWhitespace": false
+  },
+  "terminal.integrated.defaultProfile.linux": "bash"
+}
