@@ -217,7 +217,11 @@ DELETE 6
  id | name
 ----+------
 (0 rows)
+```
 
+CSVインポート
+
+```psql
 -- レコードリストア
 =# \copy staff FROM './export/staff_data.csv' WITH CSV HEADER;
 COPY 10
@@ -239,11 +243,27 @@ COPY 10
 (10 rows)
 ```
 
-単一データベースのバックアップ
+単一データベースのダンプ(バックアップ)
 
 ```terminal
 $ pg_dump -h db -U postgres -d study -F c -f ./export/dump_db.dump
 Password:
 ```
 
-テーブルを削除し、 **dump** よりリストアを試みたが操作がわからない。
+## 課題
+
+- UPDATE文を発行する
+- テーブルを削除し、 **dump** よりリストアを試みたが操作がわからない。
+- ディレクトリ `sql` を作成し、SQLスクリプトを作成利用する
+
+```terminal
+# コマンドラインから直接実行
+$ psql -U ユーザ名 -d データベース名 -f ファイル名.sql
+```
+
+- `pg_restore` のテスト
+
+```terminal
+## 既存のデータをクリーン（削除）してからリストアする
+$ pg_restore -U ユーザ名 -h ホスト名 -d データベース名 --clean --no-acl -v ファイル名.dump
+```
