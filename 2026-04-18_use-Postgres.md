@@ -253,6 +253,23 @@ Password:
 ## 課題
 
 - UPDATE文を発行する
+- UPSERTオプション
+  - レコードが存在しない場合は挿入し、存在する場合は更新する
+
+```
+INSERT INTO users (id, name)
+VALUES (1, '佐藤 健四郎')
+ON CONFLICT (id)
+DO UPDATE SET
+  name = EXCLUDED.name;
+
+INSERT INTO users (id, name)
+VALUES (11, '中島 葵')
+ON CONFLICT (id)
+DO UPDATE SET
+  name = EXCLUDED.name;
+```
+
 - テーブルを削除し、 **dump** よりリストアを試みたが操作がわからない。
 - ディレクトリ `sql` を作成し、SQLスクリプトを作成利用する
 
