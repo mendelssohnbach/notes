@@ -18,15 +18,15 @@ Password for user postgres:
 study=#
 ```
 
-![接続する](image.png)
+![接続する](assets/image-1.png)
 
-![高度な接続設定 ポート](image-1.png)
+![高度な接続設定 ポート](assets/image-1.png)
 
-![高度な接続設定 SSL](image-2.png)
+![高度な接続設定 SSL](assets/image-2.png)
 
 ユーザー表示
 
-```
+```psql
 # \du
                              List of roles
  Role name |                         Attributes
@@ -252,7 +252,7 @@ Password:
 
 ## コマンド
 
-```
+```psql
 =# \l -- データベース一覧表示
 =# \dt+ -- 詳細なテーブル一覧表示
 =# CREATE DATABASE DATABASE_NAME;  -- 新しいデータベース作成
