@@ -250,6 +250,18 @@ $ pg_dump -h db -U postgres -d study -F c -f ./export/dump_db.dump
 Password:
 ```
 
+## コマンド
+
+```
+=# \l -- データベース一覧表示
+=# \dt+ -- 詳細なテーブル一覧表示
+=# CREATE DATABASE DATABASE_NAME;  -- 新しいデータベース作成
+=# DROP DATABASE DATABASE_NAME;  -- データベース削除
+=# SELECT current_database();  -- 現在のデータベース名表示
+=# CREATE TABLE TABLE_NAME (COLUMN_NAME DATA_TYPE);  -- テーブル作成
+=# DROP TABLE TABLE_NAME;  -- テーブル削除
+```
+
 ## 課題
 
 - UPDATE文を発行する
