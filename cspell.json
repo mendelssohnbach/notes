@@ -21,11 +21,16 @@
     "adduser",
     "Cgreen",
     "Creset",
+    "dpkg",
+    "dumpcap",
+    "getcap",
     "modelcontextprotocol",
     "oneline",
     "pdfseparate",
     "pdftk",
     "precommit",
-    "psql"
+    "psql",
+    "usermod",
+    "Wireshark"
   ]
 }
