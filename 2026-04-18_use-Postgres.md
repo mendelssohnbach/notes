@@ -10,7 +10,9 @@ $ psql -V
 psql (PostgreSQL) 18.3 (Ubuntu 18.3-1.pgdg24.04+1)
 ```
 
-CLIログイン
+## ログイン
+
+### CLIログイン
 
 ```terminal
 $ psql -h db -U postgres -d study
@@ -18,11 +20,18 @@ Password for user postgres:
 study=#
 ```
 
-![接続する](assets/image-1.png)
+### 拡張機能の設定
 
-![高度な接続設定 ポート](assets/image-1.png)
+- パラメータ
+  ![接続する](assets/image-0.png)
 
-![高度な接続設定 SSL](assets/image-2.png)
+- ポート
+  ![高度な接続設定 ポート](assets/image-1.png)
+
+- SSL
+  ![高度な接続設定 SSL](assets/image-2.png)
+
+## psqlコマンド
 
 ユーザー表示
 
