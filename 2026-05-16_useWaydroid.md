@@ -24,4 +24,23 @@ $ waydroid prop set persist.waydroid.height ""
 $ sudo systemctl restart waydroid-container
 ```
 
-`Super` キー + `マウスドラッグ` : ウィンドウの移動
+ウィンドウの移動
+
+`Super` キー + `マウスドラッグ`
+
+ナイトモードのON/OFF
+
+Waydroidを起動した後
+
+```terminal
+$ udo waydroid shell
+
+# Nightモード無効化
+:/ # cmd uimode night no
+
+# Night有効化
+cmd uimode night yes
+
+:/ # exit
+# アプリを再起動
+```
