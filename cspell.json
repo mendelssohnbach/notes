@@ -8,7 +8,15 @@
     ".vscode",
     ".vscode-insiders"
   ],
-  "ignoreWords": ["imgtext", "navbtn", "lorem", "ipsum", "dolor", "sit", "amet"],
+  "ignoreWords": [
+    "imgtext",
+    "navbtn",
+    "lorem",
+    "ipsum",
+    "dolor",
+    "sit",
+    "amet"
+  ],
   "words": [
     "adduser",
     "ardvark",
@@ -26,15 +34,19 @@
     "fooey",
     "getcap",
     "hoge",
+    "JINKO",
     "lanname",
     "libc",
     "macfoo",
+    "menseki",
+    "mitsudo",
     "modelcontextprotocol",
     "oneline",
     "pdfseparate",
     "pdftk",
     "pgdg",
     "pgtap",
+    "pkey",
     "plpgsql",
     "precommit",
     "psql",
@@ -42,8 +54,13 @@
     "ROWTYPE",
     "sabafoo",
     "sdace",
+    "SETOF",
+    "SQLERRM",
+    "SQLSTATE",
+    "uimode",
     "USENAME",
     "usermod",
+    "Waydroid",
     "Wireshark"
   ]
 }
