@@ -95,13 +95,34 @@ PVTI_...B         第2章：ログの出力設計とフォーマット  Issue  T
 PVTI_...C         第3章：ログの収集とストレージ  Issue  Todo
 ```
 
-## プロジェクトをブラウザで開く
+## ブラウザで開く
 
 ```terminal
 $ gh project view $PROJECT_NUM --owner "@me" --web
 ```
 
-## プロジェクトを削除
+## 一覧取得
+
+```terminal
+$ gh project list --owner "@me"
+
+# 出力イメージ
+NUMBER  TITLE                         ITEMS  UPDATED       ID
+1       読書：家庭菜園の教科書          12     2 hours ago   PVTI_lAD...
+2       9月開始：新規開発プロジェクトA  0      1 day ago     PVTI_mBD...
+3       9月開始：保守運用プロジェクトB  5      3 days ago    PVTI_nCD...
+```
+
+## アイテム一覧
+
+アイテム(ITEMS)とは、プロジェクトボードに追加されているカードの総数のこと。
+
+```terminal
+# gh project item-list PROJECT_NUMBER --owner "@me"
+$ gh project item-list 1 --owner "@me"
+```
+
+## 削除
 
 ```terminal
 $ gh project delete $PROJECT_NUM --owner "@me"
