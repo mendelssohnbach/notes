@@ -51,6 +51,7 @@
     "plpgsql",
     "precommit",
     "psql",
+    "PVTI",
     "rettype",
     "ROWTYPE",
     "sabafoo",
