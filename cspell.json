@@ -24,6 +24,7 @@
     "argtype",
     "autoremove",
     "Cgreen",
+    "configtool",
     "Creset",
     "Ctype",
     "dbname",
@@ -32,6 +33,7 @@
     "drwxr",
     "drwxrwxr",
     "dumpcap",
+    "Fcitx",
     "fooey",
     "getcap",
     "hoge",
@@ -42,7 +44,9 @@
     "menseki",
     "mitsudo",
     "modelcontextprotocol",
+    "mozc",
     "NICT",
+    "OADG",
     "oneline",
     "pdfseparate",
     "pdftk",
@@ -68,6 +72,7 @@
     "USENAME",
     "usermod",
     "Waydroid",
-    "Wireshark"
+    "Wireshark",
+    "XMODIFIERS"
   ]
 }
