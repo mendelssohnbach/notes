@@ -17,6 +17,8 @@ $ npm install
 
 ### インストール
 
+**JavaScript** / **TypeScript** 共に同一のパッケージで対応できる。
+
 ```terminal
 $ npm install -D vitest @testing-library/react @testing-library/jest-dom
 $ npm install -D @testing-library/user-event jsdom
@@ -57,6 +59,20 @@ import '@testing-library/jest-dom'
   }
 ```
 
+### TypeScriptへの対応
+
+`tsconfig.app.json` の `types` キーの配列値に `"vitest/globals"` を追加する。
+
+```json
+// src/tsconfig.app.json
+{
+  "compilerOptions": {
+    ...
+    "types": ["vite/client", "vitest/globals"],
+    ...
+}
+```
+
 ## Vitest
 
 `describe()`
@@ -69,6 +85,23 @@ import '@testing-library/jest-dom'
 : アサーションの作成に用いる。
 
 ## React Testing Library
+
+## AAAパターン
+
+Arrange（準備）→ Act（実行）→ Assert（検証） の3ステップで書く
+
+```js
+it('ユーザー名を表示する', () => {
+  // Arrange — テストの準備
+  const user = { name: '田中太郎', age: 25 };
+
+  // Act — テスト対象の操作を実行
+  const result = formatUserName(user);
+
+  // Assert — 結果を検証
+  expect(result).toBe('田中太郎 (25歳)');
+});
+```
 
 ### シンプルなコンポーネントのテスト
 
