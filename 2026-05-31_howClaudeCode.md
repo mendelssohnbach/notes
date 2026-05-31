@@ -49,6 +49,9 @@ my-claudecode-devcontainer   local     0efb73020702   5 minutes ago   1.37GB
 }
 ```
 
+プロンプトが以下のように変わる。
+![プロンプト](assets/2026-06-01_08-10-05.png)
+
 ## ビルド済みイメージ
 
 毎日3時に自動更新される。
