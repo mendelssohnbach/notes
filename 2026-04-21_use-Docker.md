@@ -48,3 +48,13 @@ Docker Desktopのバージョンアップ
 ```terminal
 $ sudo apt-get install -y ~/Downloads/docker-desktop-amd64.deb
 ```
+
+Docker Builds の消去
+
+```terminal
+$ systemctl --user stop docker-desktop
+$ rm -rf ~/.docker/buildx/refs/
+$ rm -f ~/.docker/buildx/activity/desktop-linux
+$ rm -f ~/.docker/buildx/activity/default
+$ systemctl --user start docker-desktop
+```
