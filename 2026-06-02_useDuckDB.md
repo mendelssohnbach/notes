@@ -3,7 +3,7 @@ tags:
   - DB
 ---
 
-# DuckDB
+# DuckDB入門
 
 - [DuckDB in Action](https://github.com/duckdb-in-action/examples)
 - [examples repository](https://github.com/duckdb-in-action/examples)
@@ -220,14 +220,31 @@ memory D SELECT count(*) AS countries,
 │       227 │     1313973713 │ 598227.0 │
 ```
 
+csv形式での保存
+
 バックスラッシュが認識できないので1行入力する。
 
 ```terminal
+# 西ヨーロッパ諸国の人口、出生率、死亡率を問い合わせ、csvファイルに保存
 $ ./duckdb -csv -s "SELECT Country, Population, Birthrate, Deathrate FROM read_csv_auto('https://bit.ly/3KoiZR0') WHERE trim(region) = 'WESTERN EUROPE'" > western_europe.csv
 
 # 確認
+$ wc -l western_europe.csv
+29 western_europe.csv
 $ head -n 3 western_europe.csv
 Country,Population,Birthrate,Deathrate
 Andorra ,71201,"8,71","6,25"
 Austria ,8192880,"8,74","9,76"
+```
+
+parquet形式での保存の場合は、 `COPY ... TO ...` 句を使う。
+
+```terminal
+$ ./duckdb -s "COPY (    SELECT Country, Population, Birthrate, Deathrate FROM read_csv_auto('https://bit.ly/3KoiZR0') WHERE trim(region) = 'WESTERN EUROPE'
+    ) TO 'western_europe.parquet' (FORMAT PARQUET)"
+
+# 確認
+$ file western_europe.parquet
+western_europe.parquet: Apache Parquet
+./duckdb -s "FROM 'western_europe.parquet' LIMIT 5"
 ```
