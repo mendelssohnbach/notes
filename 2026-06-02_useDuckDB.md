@@ -248,3 +248,77 @@ $ file western_europe.parquet
 western_europe.parquet: Apache Parquet
 ./duckdb -s "FROM 'western_europe.parquet' LIMIT 5"
 ```
+
+# SQLクエリの実行
+
+エネルギー消費スキーマ
+
+readingsテーブル
+
+| カラム名  | データ型     | 属性/キー |
+| :-------- | :----------- | :-------- |
+| system_id | INTEGER      | PK, FK    |
+| read_on   | TIMESTAMP    | PK        |
+| power     | DECIMAL(8,3) |           |
+
+systemsテーブル
+
+| カラム名 | データ型 | 属性/キー |
+| :------- | :------- | :-------- |
+| id       | INTEGER  | PK        |
+| name     | VARCHAR  |           |
+
+pricesテーブル
+
+| カラム名    | データ型     | 属性/キー |
+| :---------- | :----------- | :-------- |
+| id          | INTEGER      | PK        |
+| value       | DECIMAL(5,2) |           |
+| valid_from  | DATE         |           |
+| valid_until | DATE         |           |
+
+## データ定義言語クエリ
+
+- データセットを取り込む前にデータ定義言語クエリ(DDL)を使ってスキーマを定義する
+- `CREATE TABLE` 文で新しいテーブルを作成する
+- `ALTER TABLE` 文で既存のテーブルを変更する
+
+### CREATE TABLE文
+
+```sql
+-- systems テーブルを作成
+-- V01__Create_table_systems.sql
+CREATE TABLE IF NOT EXISTS systems (
+    id          INTEGER PRIMARY KEY,
+    name        VARCHAR(128) NOT NULL
+);
+```
+
+```sql
+-- readings テーブルを作成
+-- V02__Create_table_readings.sql
+CREATE TABLE IF NOT EXISTS readings (
+    system_id   INTEGER NOT NULL,
+    read_on     TIMESTAMP NOT NULL,
+    power       DECIMAL(10,3) NOT NULL
+            DEFAULT 0 CHECK(power >= 0), -- デフォルト値: 0 CHECKにて0以上
+    PRIMARY KEY (system_id, read_on),
+    FOREIGN KEY (system_id)
+            REFERENCES systems(id)
+);
+```
+
+```sql
+-- readings テーブルを作成
+-- V03__Create_table_prices.sql
+CREATE SEQUENCE IF NOT EXISTS prices_id
+    INCREMENT BY 1 MINVALUE 10; -- 開始値: 10 増分値: 1
+
+CREATE TABLE IF NOT EXISTS prices (
+    id          INTEGER PRIMARY KEY
+                    DEFAULT(nextval('prices_id')),
+    value       DECIMAL(5,2) NOT NULL,
+    valid_from  DATE NOT NULL,
+    CONSTRAINT prices_uk UNIQUE (valid_from)
+);
+```
