@@ -1230,3 +1230,35 @@ FROM v_power_per_day ORDER BY ALL DESC LIMIT 3;
 │     16300.000 │
 └───────────────┘
 ```
+
+### オプションパラメータを持つ関数
+
+必須パラメータとデフォルト値が設定されている関数がある。
+
+```sql
+SELECT DISTINCT unnest(parameters)
+FROM duckdb_functions()
+WHERE function_name = 'read_json_auto';
+┌─────────────────────────────┐
+│     unnest(parameters)      │
+│           varchar           │
+├─────────────────────────────┤
+│ convert_strings_to_integers │
+│ timestamp_format            │
+│ maximum_object_size         │
+...
+```
+
+名前付きパラメータを使用する
+
+```terminal
+-- 名前付きパラメータdateformatの使用
+echo '{"foo": "21.9.1979"}' > 'my.json'
+duckdb -s "SELECT * FROM read_json_auto('my.json', dateformat='%d.%m.%Y')"
+┌────────────┐
+│    foo     │
+│    date    │
+├────────────┤
+│ 1979-09-21 │
+└────────────┘
+```
