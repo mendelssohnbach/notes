@@ -750,3 +750,483 @@ FROM (VALUES
 | 片方にしかないデータ   | 完全に除外される                         | 相手側の列は NULL として出力される           |
 | 出力される行数         | 両方に存在するデータのみのため少なくなる | すべてのデータが含まれるため多くなる         |
 | 主なユースケース       | 共通するデータだけを厳密に抽出したいとき | データの不一致や抜け漏れをチェックしたいとき |
+
+**USING** 語句を使った内部結合
+
+```sql
+-- 左側 lテーブルに存在し
+-- 他側 rテーブルにも存在するコードのみ
+-- 結合される
+SELECT *
+FROM
+    (VALUES (1, 'a1'),
+            (2, 'a2'),
+            (3, 'a3')) l(id, nameA)
+JOIN
+    (VALUES (1, 'b1'),
+            (2, 'b2'),
+            (4, 'b3')) r(id, nameB)
+USING (id); -- ON l.id = r.id と等価ね結合
+┌───────┬─────────┬─────────┐
+│  id   │  nameA  │  nameB  │
+│ int32 │ varchar │ varchar │
+├───────┼─────────┼─────────┤
+│     1 │ a1      │ b1      │
+│     2 │ a2      │ b2      │
+└───────┴─────────┴─────────┘
+```
+
+`LEFT OUTER JOIN` 左外部結合
+
+```sql
+-- 左側と右側の一致行を結合し、かつ
+-- 左側 lテーブルに存在するが
+-- 他側 rテーブルに存在しないレコードは
+-- NULL値が補完される
+SELECT *
+FROM
+    (VALUES (1, 'a1'),
+            (2, 'a2'),
+            (3, 'a3')) l(id, nameA)
+LEFT OUTER JOIN
+    (VALUES (1, 'b1'),
+            (2, 'b2'),
+            (4, 'b3')) r(id, nameB)
+USING (id)
+ORDER BY id;
+┌───────┬─────────┬─────────┐
+│  id   │  nameA  │  nameB  │
+│ int32 │ varchar │ varchar │
+├───────┼─────────┼─────────┤
+│     1 │ a1      │ b1      │
+│     2 │ a2      │ b2      │
+│     3 │ a3      │ NULL    │
+└───────┴─────────┴─────────┘
+```
+
+`RIGHT OUTER JOIN` 右外部結合
+
+```sql
+-- 左側と右側の一致行を結合し、かつ
+-- 左側 lテーブルに存在せず
+-- 他側 rテーブルに存在するコードは
+-- NULL値が補完される
+SELECT *
+FROM
+    (VALUES (1, 'a1'),
+            (2, 'a2'),
+            (3, 'a3')) l(id, nameA)
+RIGHT OUTER JOIN
+    (VALUES (1, 'b1'),
+            (2, 'b2'),
+            (4, 'b3')) r(id, nameB)
+USING (id)
+ORDER BY id;
+┌───────┬─────────┬─────────┐
+│  id   │  nameA  │  nameB  │
+│ int32 │ varchar │ varchar │
+├───────┼─────────┼─────────┤
+│     1 │ a1      │ b1      │
+│     2 │ a2      │ b2      │
+│     4 │ NULL    │ b3      │
+└───────┴─────────┴─────────┘
+```
+
+`FULL OUTER JOIN`　完全外部結合
+
+```sql
+-- 左側と右側の一致行を結合し、かつ
+-- 左側と右側の不一致業は
+-- NULL値が補完される
+SELECT *
+FROM
+    (VALUES (1, 'a1'),
+            (2, 'a2'),
+            (3, 'a3')) l(id, nameA)
+FULL OUTER JOIN
+    (VALUES (1, 'b1'),
+            (2, 'b2'),
+            (4, 'b3')) r(id, nameB)
+USING (id)
+ORDER BY id;
+┌───────┬─────────┬─────────┐
+│  id   │  nameA  │  nameB  │
+│ int32 │ varchar │ varchar │
+├───────┼─────────┼─────────┤
+│     1 │ a1      │ b1      │
+│     2 │ a2      │ b2      │
+│     3 │ a3      │ NULL    │
+│     4 │ NULL    │ b3      │
+└───────┴─────────┴─────────┘
+```
+
+`ON` 句による結合
+
+```sql
+SELECT name, count(*) as number_of_readings
+FROM readings JOIN systems ON id = system_id
+GROUP BY name;
+┌────────────────────────────────────────────────────┬────────────────────┐
+│                        name                        │ number_of_readings │
+│                      varchar                       │       int64        │
+├────────────────────────────────────────────────────┼────────────────────┤
+│ [34] Andre Agassi Preparatory Academy - Building A │              46034 │
+│ [10] NREL CIS -1                                   │                  1 │
+└────────────────────────────────────────────────────┴────────────────────┘
+```
+
+キー列が重複しているテーブル間の内部結合
+
+```sql
+-- 左テーブルのid列に2が2回
+-- 右テーブルのid列に3が2回
+-- 結合結果は5行
+SELECT *
+FROM
+  (VALUES (1, 'a1'),
+          (2, 'a2'),
+          (2, 'a2'),
+          (3, 'a3')) l(id, nameA)
+JOIN
+ (VALUES (1, 'b1'),
+         (2, 'b2'),
+         (3, 'b3'),
+         (3, 'b3')) r(id, nameB)
+USING (id)
+ORDER BY id;
+┌───────┬─────────┬─────────┐
+│  id   │  nameA  │  nameB  │
+│ int32 │ varchar │ varchar │
+├───────┼─────────┼─────────┤
+│     1 │ a1      │ b1      │
+│     2 │ a2      │ b2      │
+│     2 │ a2      │ b2      │
+│     3 │ a3      │ b3      │
+│     3 │ a3      │ b3      │
+└───────┴─────────┴─────────┘
+```
+
+`WITH` 句 : 共通テーブル式(CTE: Common Table Expression)
+
+- 特定のクエリに限定されたスコープを持つビュー
+- クエリロジックの一部を独立した文にカプセル化する
+- 大きなクエリの一部を分離
+- 他のビューの参照が可能
+- ネストできない
+- `FROM` 句でのサブクエリを防ぐ目的で使用することが多い
+
+サブクエリの例
+
+```sql
+-- power列の最大値
+SELECT max_power.v, read_on
+FROM (
+  SELECT max(power) AS v FROM readings
+) max_power
+JOIN readings ON power = max_power.v;
+┌───────────────┬─────────────────────┐
+│       v       │       read_on       │
+│ decimal(10,3) │      timestamp      │
+├───────────────┼─────────────────────┤
+│    133900.000 │ 2019-05-23 11:00:00 │
+│    133900.000 │ 2019-05-23 12:30:00 │
+│    133900.000 │ 2019-05-28 12:45:00 │
+│    133900.000 │ 2019-05-08 13:15:00 │
+└───────────────┴─────────────────────┘
+```
+
+CTEの例
+
+```sql
+WITH max_power AS (
+  SELECT max(power) AS v FROM readings
+)
+SELECT max_power.v, read_on
+FROM max_power
+JOIN readings ON power = max_power.v;
+┌───────────────┬─────────────────────┐
+│       v       │       read_on       │
+│ decimal(10,3) │      timestamp      │
+├───────────────┼─────────────────────┤
+│    133900.000 │ 2019-05-23 11:00:00 │
+│    133900.000 │ 2019-05-23 12:30:00 │
+│    133900.000 │ 2019-05-28 12:45:00 │
+│    133900.000 │ 2019-05-08 13:15:00 │
+└───────────────┴─────────────────────┘
+```
+
+```sql
+-- 最大発電量に該当するread_on列値を求める
+SELECT max(power), arg_max(read_on, power) AS read_on
+FROM readings;
+┌───────────────┬─────────────────────┐
+│  max(power)   │       read_on       │
+│ decimal(10,3) │      timestamp      │
+├───────────────┼─────────────────────┤
+│    133900.000 │ 2019-05-23 11:00:00 │
+└───────────────┴─────────────────────┘
+```
+
+`RECURSIVE` 再帰的CTE。後続する他のCTEやFROM句、自己参照できる。
+
+```sql
+-- per_hour として1時間毎の発電量を求める
+WITH per_hour AS (
+  SELECT system_id,
+    date_trunc('hour', read_on) AS read_on,
+    avg(power) / 1000 AS kWh -- 時間毎の平均値を1000で除算し単位をkに直す
+  FROM readings
+  GROUP BY ALL -- 集約に含まれていないすべての列からグループを作成
+)
+SELECT name,
+  max(kWh),
+  arg_max(read_on, kWh) AS 'Read on'
+FROM per_hour -- 定義したCTEを利用
+  JOIN systems s ON s.id = per_hour.system_id
+WHERE system_id = 34
+GROUP BY s.name;
+```
+
+```sql
+CREATE TABLE IF NOT EXISTS src (
+  id INT PRIMARY KEY,
+  parent_id INT, name VARCHAR(8)
+);
+
+INSERT INTO src (VALUES
+  (1, null, 'root1'),
+  (2, 1, 'ch1a'),
+  (3, 1, 'ch2a'),
+  (4, 3, 'ch3a'),
+  (5, null, 'root2'),
+  (6, 5, 'ch1b')
+);
+
+WITH RECURSIVE tree AS (
+  SELECT id,
+    id AS root_id,
+    [name] AS path
+  FROM src WHERE parent_id IS NULL
+  UNION ALL
+  SELECT src.id,
+    root_id,
+    list_append(tree.path, src.name) AS path
+  FROM src
+    JOIN tree ON (src.parent_id = tree.id)
+)
+SELECT path FROM tree;
+┌─────────────────────┐
+│        path         │
+│      varchar[]      │
+├─────────────────────┤
+│ [root1]             │
+│ [root2]             │
+│ [root1, ch1a]       │
+│ [root1, ch2a]       │
+│ [root2, ch1b]       │
+│ [root1, ch2a, ch3a] │
+└─────────────────────┘
+```
+
+## 固有のSQL拡張
+
+`EXCLUDE` 一部の列を除外する。
+
+```sql
+SELECT value, valid_from, valid_until FROm prices LIMIT 5;
+
+-- ` ですべての列
+memory D FROM prices LIMIT 5;
+┌───────┬──────────────┬────────────┬─────────────┐
+│  id   │    value     │ valid_from │ valid_until │
+│ int32 │ decimal(5,2) │    date    │    date     │
+├───────┼──────────────┼────────────┼─────────────┤
+│     1 │        11.59 │ 2018-12-01 │ 2019-01-01  │
+│    10 │        11.47 │ 2019-01-01 │ 2019-02-01  │
+│    11 │        11.35 │ 2019-02-01 │ 2019-03-01  │
+│    12 │        11.23 │ 2019-03-01 │ 2019-04-01  │
+│    13 │        11.11 │ 2019-04-01 │ 2019-05-01  │
+└───────┴──────────────┴────────────┴─────────────┘
+```
+
+`REPLACE` 閣下を再構成する。
+
+```sql
+-- kWhは小数点数で返される
+-- REPLACE で四捨五入値に再構成する
+SELECT * REPLACE (round(kWh)::int As kWh)
+FROM v_power_per_day LIMIT 5;
+┌───────────┬─────────────────────┬───────┐
+│ system_id │         day         │  kWh  │
+│   int32   │      timestamp      │ int32 │
+├───────────┼─────────────────────┼───────┤
+│        34 │ 2019-01-19 00:00:00 │   447 │
+│        34 │ 2019-01-20 00:00:00 │   384 │
+│        34 │ 2019-01-25 00:00:00 │   488 │
+│        34 │ 2019-01-27 00:00:00 │   471 │
+│        34 │ 2019-01-07 00:00:00 │   144 │
+└───────────┴─────────────────────┴───────┘
+```
+
+列への動的な射影とフィルタリング
+
+`COLUMNS` 式は正規表現で列名をクエリできる。
+
+```sql
+SELECT COLUMNS('valid.*') FROM prices LIMIT 3;
+┌────────────┬─────────────┐
+│ valid_from │ valid_until │
+│    date    │    date     │
+├────────────┼─────────────┤
+│ 2018-12-01 │ 2019-01-01  │
+│ 2019-01-01 │ 2019-02-01  │
+│ 2019-02-01 │ 2019-03-01  │
+└────────────┴─────────────┘
+```
+
+```sql
+-- valid で始まるすべての列の最大値を求める
+SELECT max(COLUMNS('valid.*')) FROM prices;
+┌────────────┬─────────────┐
+│ valid_from │ valid_until │
+│    date    │    date     │
+├────────────┼─────────────┤
+│ 2023-01-01 │ 2024-02-01  │
+└────────────┴─────────────┘
+```
+
+```sql
+-- 2020年の1年間で有効な価格をすべて求める
+FROM prices WHERE COLUMNS('valid.*') BETWEEN '2020-01-01' AND '2021-01-01';
+┌───────┬──────────────┬────────────┬─────────────┐
+│  id   │    value     │ valid_from │ valid_until │
+│ int32 │ decimal(5,2) │    date    │    date     │
+├───────┼──────────────┼────────────┼─────────────┤
+│    20 │         8.64 │ 2020-10-01 │ 2020-11-01  │
+│    21 │         8.77 │ 2020-09-01 │ 2020-10-01  │
+...
+```
+
+```sql
+-- ラムダ関数と LIKE演算子を使う
+FROM prices
+WHERE COLUMNS(lambda col: col LIKE 'valid%')
+BETWEEN '2020-01-01' AND '2021-01-01';
+-- 非推奨: ラムダ式と LIKE演算子を使う
+FROM prices
+WHERE COLUMNS(col -> col LIKE 'valid%')
+BETWEEN '2020-01-01' AND '2021-01-01';
+┌───────┬──────────────┬────────────┬─────────────┐
+│  id   │    value     │ valid_from │ valid_until │
+│ int32 │ decimal(5,2) │    date    │    date     │
+├───────┼──────────────┼────────────┼─────────────┤
+│    20 │         8.64 │ 2020-10-01 │ 2020-11-01  │
+│    21 │         8.77 │ 2020-09-01 │ 2020-10-01  │
+...
+```
+
+```sql
+-- 全ての列の最大値を求める
+SELECT max(COLUMNS(* EXCLUDE id)) FROM prices;
+┌──────────────┬────────────┬─────────────┐
+│    value     │ valid_from │ valid_until │
+│ decimal(5,2) │    date    │    date     │
+├──────────────┼────────────┼─────────────┤
+│        11.59 │ 2023-01-01 │ 2024-02-01  │
+└──────────────┴────────────┴─────────────┘
+```
+
+### 名前で挿入する
+
+`BY NAME` 句
+
+```sql
+-- BY NAME を使ってソースの列名をターゲットの列名にマッピング
+INSERT INTO systems BY NAME
+SELECT DISTINCT
+  system_id AS id,
+  system_public_name AS NAME
+FROM 's3://oedi-data-lake/pvdaq/csv/pvdata/system_id=34/year=2019/*/*/*.csv'
+ON CONFLICT DO NOTHING;
+```
+
+### エイリアスにアクセスする
+
+```sql
+SELECT system_id > 10 AS is_not_system10,
+  date_trunc('month', read_on) AS month,
+  sum(power) / 1000 / 1000 AS power_per_month
+FROM readings
+WHERE is_not_system10 = TRUE -- 非集約にアクセス
+GROUP BY is_not_system10, month
+HAVING power_per_month > 100; -- 集約を参照するエイリアスにアクセス
+┌──────────────────┬───────────┬─────────────────┐
+│ is_not_system110 │   month   │ power_per_month │
+│     boolean      │ timestamp │     double      │
+└──────────────────┴───────────┴─────────────────┘
+```
+
+### 関連するすべての列によるグループ化と並べ替え
+
+`GROUP BY ALL` 非集約列をGROUP BY句に列挙せずに済ませる。
+
+```sql
+CREATE OR REPLACE VIEW v_power_per_day AS
+SELECT
+  system_id,
+  date_trunc('day', read_on) AS day,
+  round(sum(power)) / 4 / 1000, 2) AS kWh,
+FROM readings
+GROUP BY ALL;
+```
+
+`ORDER BY ALL` 左の列から右の列へ順番に結果を並べる。
+
+```sql
+SELECT system_id, day FROm v_power_per_day ORDER BY ALL LIMIT 3;
+┌───────────┬─────────────────────┐
+│ system_id │         day         │
+│   int32   │      timestamp      │
+├───────────┼─────────────────────┤
+│        10 │ 2023-06-05 00:00:00 │
+│        34 │ 2019-01-01 00:00:00 │
+│        34 │ 2019-01-02 00:00:00 │
+└───────────┴─────────────────────┘
+```
+
+```sql
+-- system_id,day,kWhの降順に並べ替える
+FROM v_power_per_day ORDER BY ALL DESC LIMIT 3;
+┌───────────┬─────────────────────┬────────┐
+│ system_id │         day         │  kWh   │
+│   int32   │      timestamp      │ double │
+├───────────┼─────────────────────┼────────┤
+│        34 │ 2019-12-31 00:00:00 │  445.3 │
+│        34 │ 2019-12-30 00:00:00 │ 435.45 │
+│        34 │ 2019-12-29 00:00:00 │ 321.43 │
+└───────────┴─────────────────────┴────────┘
+```
+
+### データのサンプリング
+
+`SAMPLE` データセットからサンプルを取得する。
+
+```sql
+┌───────────────┐
+│     power     │
+│ decimal(10,3) │
+├───────────────┤
+│     34000.000 │
+│     82400.000 │
+│     16300.000 │
+└───────────────┘
+
+┌───────────────┐
+│     power     │
+│ decimal(10,3) │
+├───────────────┤
+│     34000.000 │
+│     82400.000 │
+│     16300.000 │
+└───────────────┘
+```
