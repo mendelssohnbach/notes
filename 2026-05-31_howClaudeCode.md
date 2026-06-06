@@ -37,6 +37,11 @@ REPOSITORY                   TAG       IMAGE ID       CREATED         SIZE
 my-claudecode-devcontainer   local     0efb73020702   5 minutes ago   1.37GB
 ```
 
+##
+
+`Alt+Enter`
+: プロンプト内で改行する。
+
 ## イメージの利用
 
 プロジェクトディレクトリにて `.devcontainer/devcontainer.json` を作成する。
