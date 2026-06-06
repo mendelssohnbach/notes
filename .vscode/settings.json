@@ -27,7 +27,6 @@
   },
   "markdown.editor.drop.copyIntoWorkspace": "mediaFiles",
   "markdown.editor.filePaste.copyIntoWorkspace": "mediaFiles",
-  "markdown-preview-enhanced.printBackground": true,
   "terminal.integrated.copyOnSelection": true,
   "terminal.integrated.fontFamily": "'FiraCode Nerd Font Mono'",
   "[markdown]": {
@@ -38,7 +37,19 @@
     "editor.tabSize": 2,
     "editor.insertSpaces": true
   },
-  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.profiles.linux": {
+    "bash (default)": {
+      "path": "/bin/bash",
+      "args": ["-l"],
+      "icon": "terminal-bash"
+    },
+    "root (bash)": {
+      "path": "/usr/bin/sudo",
+      "args": ["-i"],
+      "icon": "shield"
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash (default)",
   "vsnotes.noteTitleConvertSpaces": " ",
   "vsnotes.defaultNoteTitle": "{dt}_{title}.{ext}",
   "vsnotes.tokens": [
