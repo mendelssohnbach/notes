@@ -69,6 +69,7 @@
     "pdftk",
     "pgdg",
     "pgtap",
+    "PIPESTATUS",
     "pkey",
     "plpgsql",
     "precommit",
@@ -96,6 +97,7 @@
     "usermod",
     "varchar",
     "Variegata",
+    "VIRT",
     "Waydroid",
     "Wireshark",
     "XMODIFIERS"
