@@ -248,6 +248,13 @@ DROP TABLE <テーブル名>;
 ```sql
 -- 構文
 ALTER TABLE <テーブル名> ADD COLUMN <列定義>;
+-- 既存のテーブルに列を追加
+ALTER TABLE <テーブル名> ADD COLUMN <追加列名> CHAR(8) NOT NULL;
+-- 複数の列を追加する場合は {} が必要
+ALTER TABLE <テーブル名> ADD COLUMN (
+  <追加列名1> CHAR(8) NOT NULL,
+  <追加列名2> VARCHAR(10)
+);
 ```
 
 ```sql
@@ -317,3 +324,32 @@ postgres=# \d Shohin;
 Indexes:
     "shohin_pkey" PRIMARY KEY, btree (shohin_id)
 ```
+
+### データ登録
+
+```sql
+BEGIN TRANSACTION;
+
+INSERT INTO shohin VALUES ('0001', 'Tシャツ', '衣服', 1000, 500, '2009-09-20');
+...
+INSERT INTO shohin VALUES ('0008', 'ボールペン', '事務用品', 100, NULL, '2009-11-11');
+
+COMMIT;
+
+-- psql 8件登録したので INSERT は8回表示される
+BEGIN
+INSERT 0 1
+...
+INSERT 0 1
+COMMIT
+```
+
+`RENAME`
+: テーブル名を変更する
+
+```sql
+-- 構文
+ALTER TABLE <変更前テーブル名> RENAME TO <変更後テーブル名>;
+```
+
+# 検索の基本
