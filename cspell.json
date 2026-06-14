@@ -8,7 +8,15 @@
     ".vscode",
     ".vscode-insiders"
   ],
-  "ignoreWords": ["imgtext", "navbtn", "lorem", "ipsum", "dolor", "sit", "amet"],
+  "ignoreWords": [
+    "imgtext",
+    "navbtn",
+    "lorem",
+    "ipsum",
+    "dolor",
+    "sit",
+    "amet"
+  ],
   "words": [
     "abcade",
     "abcdbe",
@@ -47,10 +55,12 @@
     "GSSAPI",
     "gsub",
     "hanbai",
+    "hizuke",
     "hoge",
     "httpf",
     "httpfs",
     "JINKO",
+    "kazu",
     "keyrings",
     "lanname",
     "libc",
@@ -62,6 +72,7 @@
     "mitsudo",
     "mktime",
     "modelcontextprotocol",
+    "mojiretu",
     "mozc",
     "newgrp",
     "nextval",
