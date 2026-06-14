@@ -353,3 +353,242 @@ ALTER TABLE <変更前テーブル名> RENAME TO <変更後テーブル名>;
 ```
 
 # 検索の基本
+
+## SELECT文の基本
+
+```sql
+-- 構文
+SELECT <列名> FROM <テーブル名>;
+```
+
+```sql
+postgres=# SELECT shohin_id, shohin_mei, shiire_tanka
+FROM
+Shohin;
+ shohin_id |   shohin_mei   | shiire_tanka
+-----------+----------------+--------------
+ 0001      | Tシャツ        |          500
+...
+(8 rows)
+```
+
+```sql
+-- 日本語で別名を付ける
+-- ダブルクォートで囲む
+SELECT shohin_id AS "商品ID",
+    shohin_mei AS "商品名",
+    shiire_tanka AS "仕入単価"
+  FROM
+  Shohin;
+```
+
+### 定数を使う
+
+```sql
+-- 1列名: 商品という文字列定数
+-- 2列目: 38という数値定数
+-- 3列目: 2009-02-24という日付定数
+SELECT '商品' AS mojiretu, 38 AS kazu, '2009-02-24' AS hizuke, shohin_id, shohin_mei
+  FROM Shohin;
+ mojiretu | kazu |   hizuke   | shohin_id |   shohin_mei
+----------+------+------------+-----------+----------------
+ 商品     |   38 | 2009-02-24 | 0001      | Tシャツ
+ ...
+ 商品     |   38 | 2009-02-24 | 0008      | ボールペン
+(8 rows)
+```
+
+### 重複行を省く
+
+`DISTINCT` キーワードは先頭の列に書く
+
+```sql
+SELECT DISTINCT shohin_bunrui, torokubi
+  FROm Shohin;
+```
+
+### WHERE 句
+
+```sql
+-- WHERE 句の条件はシングルクォートで囲む
+SELECT shohin_mei, shohin_bunrui
+  FROM Shohin
+  WHERE shohin_bunrui = '衣服';
+```
+
+## 算術演算子と比較演算子
+
+### 算術演算子
+
+```sql
+SELECT shohin_mei, hanbai_tanka, hanbai_tanka * 2 AS "hanbai_tanka_X2"
+  FROM Shohin;
+```
+
+### 比較演算子
+
+```sql
+-- hanbai_tanka が500に等しい
+SELECT shohin_mei, shohin_bunrui
+  FROM Shohin
+  WHERE hanbai_tanka = 500;
+```
+
+```sql
+-- hanbai_tanka が500に等しくない
+SELECT shohin_mei, shohin_bunrui
+  FROM Shohin
+  WHERE hanbai_tanka <> 500;
+```
+
+```sql
+-- hanbai_tanka が1000以上
+SELECT shohin_mei, shohin_bunrui, hanbai_tanka
+FROM Shohin
+WHERE hanbai_tanka >= 1000;
+```
+
+```sql
+-- torokubi が2009年9月27日より前
+SELECT shohin_mei, torokubi
+FROM Shohin
+WHERE torokubi < '2009-09-27';
+```
+
+```sql
+-- hanbai_tanka と shiire_tanka の差額が500以上
+SELECT shohin_mei, hanbai_tanka, shiire_tanka
+FROM Shohin
+WHERE hanbai_tanka - shiire_tanka >= 500;
+```
+
+```sql
+CREATE TABLE Chars
+  (chr CHAR(3) NOT NULL,
+  PRIMARY KEY (chr));
+
+BEGIN TRANSACTION;
+INSERT INTO Chars VALUES('1');
+INSERT INTO Chars VALUES('2');
+INSERT INTO Chars VALUES('3');
+INSERT INTO Chars VALUES('10');
+INSERT INTO Chars VALUES('11');
+INSERT INTO Chars VALUES('222');
+COMMIT;
+```
+
+```sql
+-- 文字列型の順序は辞書式
+SELECT chr FROM Chars WHERE chr > '2';
+ chr
+-----
+ 3
+ 222
+(2 rows)
+```
+
+### NULLに比較演算子は使えない
+
+`IS NULL` でNULLを選択できる
+
+```sql
+-- shiire_tanka が2800に等しい
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shiire_tanka = 2800;
+
+-- shiire_tanka が2800に等しくない
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shiire_tanka <> 2800;
+
+-- shiire_tanka がNULLである
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shiire_tanka IS NULL;
+
+-- shiire_tanka がNULLでない
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shiire_tanka IS NOT NULL;
+```
+
+## 論理演算子
+
+### NOT演算子
+
+```sql
+-- hanbai_tanka が1000以上でない
+-- hanbai_tanka が1000未満
+SELECT shohin_mei, shohin_bunrui, hanbai_tanka
+FROM Shohin
+WHERE NOT hanbai_tanka >= 1000;
+```
+
+### AND演算子/OR演算子
+
+```sql
+-- shohin_bunrui がキッチン用品に等しく
+-- かつ hanbai_tanka が3000以上
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shohin_bunrui = 'キッチン用品'
+  AND hanbai_tanka >= 3000;
+
+-- shohin_bunrui がキッチン用品に等しいか
+-- または hanbai_tanka が3000以上
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shohin_bunrui = 'キッチン用品'
+  OR hanbai_tanka >= 3000;
+```
+
+### ()を使う
+
+商品分類が事務用品かつ登録日が2009/9/11または2009/9/20
+
+```sql
+-- 間違ったクエリ
+-- shohin_bunrui が事務用品かつ torokubi が2009-09-11
+-- または torokubi が2009-09-20 を選択している
+SELECT shohin_mei, shohin_bunrui, torokubi
+FROM Shohin
+WHERE shohin_bunrui = '事務用品'
+  AND torokubi = '2009-09-11'
+  or torokubi = '2009-09-20';
+  shohin_mei  | shohin_bunrui |  torokubi
+--------------+---------------+------------
+ Tシャツ      | 衣服          | 2009-09-20
+ 穴あけパンチ | 事務用品      | 2009-09-11
+ 包丁         | キッチン用品  | 2009-09-20
+ フォーク     | キッチン用品  | 2009-09-20
+(4 rows) -- 衣服やキッチン用品が含まれた
+
+-- torokubi を()で囲み優先順位を正す
+SELECT shohin_mei, shohin_bunrui, torokubi
+FROM Shohin
+WHERE shohin_bunrui = '事務用品'
+  AND (torokubi = '2009-09-11'
+  or torokubi = '2009-09-20');
+  shohin_mei  | shohin_bunrui |  torokubi
+--------------+---------------+------------
+ 穴あけパンチ | 事務用品      | 2009-09-11
+```
+
+### 論理演算子と真理値
+
+論理演算子 NOT/AND/OR の3つ。NULL値の真理値は不明となる
+
+```sql
+SELECT shohin_mei, torokubi
+FROM Shohin
+WHERE torokubi >= '2009-04-28';
+```
+
+```sql
+SELECT *
+FROM Shohin
+WHERE shohin_mei > NULL;
+```
+
+# 集約と並べ替え
