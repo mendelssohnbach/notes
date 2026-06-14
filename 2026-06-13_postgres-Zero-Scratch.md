@@ -592,3 +592,94 @@ WHERE shohin_mei > NULL;
 ```
 
 # 集約と並べ替え
+
+## 集約して検索
+
+- 複数のレコードを集約して1レコードにまとめる
+- 集約関数は **NULL** を除外する
+- `COUNT(*)` で**NULL** を含めた行数を数える
+- `DISTINCT` で重複を除外できる
+
+### 集約関数
+
+| 集約関数  | 機能                   |
+| :-------- | :--------------------- |
+| **COUNT** | レコードの行数を数える |
+| **SUM**   | 数値列を合計する       |
+| **AVG**   | 数値列を平均する       |
+| **MAX**   | 列の最大値を求める     |
+| **MIN**   | 列の最小値を求める     |
+
+### 重複値を除外
+
+`DISTINCT`
+
+```sql
+-- shohin_bunrui に登録されている種類を調べる
+SELECT COUNT(DISTINCT shohin_bunrui)
+FROM Shohin;
+
+-- hanbai_tanka の合計
+-- DISTINCTなし/ DISTINCTあり
+SELECT SUM(hanbai_tanka), SUM(DISTINCT hanbai_tanka)
+FROM Shohin;
+```
+
+## グループに分ける
+
+`GROUP BY` : データをカテゴライズして分ける。 **WHERE** 語には使えない。
+
+```sql
+-- shohin_bunrui 毎の商品数
+SELECT shohin_bunrui, COUNT(*)
+FROM Shohin
+GROUP BY shohin_bunrui;
+```
+
+### 集約にNULLがある場合
+
+`NULL` もグループ化されて集約される。
+
+```sql
+-- shiire_tanka 毎にグループ化
+SELECT shiire_tanka, COUNT(*)
+FROM Shohin
+GROUP BY shiire_tanka;
+ shiire_tanka | count
+--------------+-------
+              |     2
+          320 |     1
+...
+```
+
+### WHERE 句
+
+WHERE 句の条件でレコードが絞り込まれた後、集約される。
+
+```sql
+-- shohin_bunrui が衣服であるレコードを
+-- shiire_tanka 毎にグループ化し、数える
+SELECT shiire_tanka, COUNT(*)
+FROM Shohin
+WHERE shohin_bunrui = '衣服'
+GROUP BY shiire_tanka;
+ shiire_tanka | count
+--------------+-------
+          500 |     1
+         2800 |     1
+```
+
+### 集約関数とGROUP BY句にまつわる間違い
+
+- `SELECT` 句に書くことができるのは3つの要素
+- `GROUP BY` 句で列の別名は使えない
+- `GROUP BY` 句は結果を並び替えない
+- `WHERE` 句には集約関数を使えない
+
+`SELECT` 句に書くことができる要素
+
+- 定数
+- 集約関数
+- `GROUP BY` 句で指定した列
+
+## 集約結果に条件を指定
