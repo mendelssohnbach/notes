@@ -903,3 +903,215 @@ ORDER BY hanbai_tanka DESC, shohin_id;
 ...
 (8 rows)
 ```
+
+# データの更新
+
+## INSERT文
+
+1回に1行を挿入する
+
+```sql
+-- 学習用データベースの作成
+CREATE TABLE ShohinIns
+(shohin_id CHAR(4) NOT NULL,
+ shohin_mei VARCHAR(100) NOT NULL,
+ shohin_bunrui VARCHAR(32) NOT NULL,
+ hanbai_tanka INTEGER DEFAULT 0,
+ shiire_tanka INTEGER ,
+ torokubi DATE ,
+     PRIMARY KEY (shohin_id));
+```
+
+## 基本構文
+
+```sql
+-- 構文
+SELECT INTO <テーブル名> (列1, 列2, ...) VALUES (値1, 値2, ...);
+```
+
+```sql
+INSERT INTO ShohinIns (
+  shohin_id, shohin_mei, shohin_bunrui, hanbai_tanka, shiire_tanka, torokubi
+) VALUES (
+  '0001', 'Tシャツ', '衣服', 1000, 500, '2009-09-20'
+);
+INSERT 0 1 -- 成功するとpsqlから返される
+```
+
+### 列リストの省略
+
+テーブルの前列に対して `INSERT` を行う場合は、列リストを省略できる
+
+### NULLを挿入
+
+`VALUES` 句の値リストに**NULL** を記述する
+
+```sql
+-- shiire_tanka をNULLとして登録
+INSERT INTO ShohinIns (
+shohin_id, shohin_mei, shohin_bunrui, hanbai_tanka, shiire_tanka, torokubi
+) VALUES (
+'0006', 'フォーク', 'キッチン用品', 500, NULL, '2009-09-20'
+);
+
+-- 確認
+SELECT * FROM ShohinIns;
+ shohin_id | shohin_mei | shohin_bunrui | hanbai_tanka | shiire_tanka |  torokubi
+-----------+------------+---------------+--------------+--------------+------------
+ 0001      | Tシャツ    | 衣服          |         1000 |          500 | 2009-09-20
+ 0006      | フォーク   | キッチン用品  |          500 |              | 2009-09-20
+```
+
+### デフォルト値の挿入
+
+- テーブル定義に `DEFAULT` 制約があること
+- 明示的挿入: `VALUES` 句に `DEFAULT` キーワードを指定
+- 暗黙的挿入: 列リストも `VALUES` からも省略
+
+デフォルト値が指定されていいないかつ、 `NOT NULL` でない列では `NULL` が割り当てられる
+
+```sql
+-- 学習用データベースの作成
+CREATE TABLE ShohinIns
+(...
+ hanbai_tanka INTEGER DEFAULT 0, -- デフォルト制約 値: 0
+...
+     PRIMARY KEY (shohin_id));
+```
+
+```sql
+-- 明示的
+-- hanbai_tanka を DEFAULT として挿入
+INSERT INTO ShohinIns (
+  shohin_id, shohin_mei, shohin_bunrui, hanbai_tanka, shiire_tanka, torokubi)
+VALUES (
+  '0007', 'おろしがね', 'キッチン用品', DEFAULT, 790, '2009-04-28'
+);
+
+-- 暗黙的
+-- hanbai_tanka を 省略
+INSERT INTO ShohinIns (
+  shohin_id, shohin_mei, shohin_bunrui, shiire_tanka, torokubi)
+-- VALUES の値も省略
+VALUES (
+  '0007', 'おろしがね', 'キッチン用品', 790, '2009-04-28'
+);
+
+-- 確認
+SELECT * FROM ShohinIns WHERE shohin_id = '0007';
+ shohin_id | shohin_mei | shohin_bunrui | hanbai_tanka | shiire_tanka |  torokubi
+-----------+------------+---------------+--------------+--------------+------------
+ 0007      | おろしがね | キッチン用品  |            0 |          790 | 2009-04-28
+(1 row)
+```
+
+### ほかのテーブルからコピー
+
+- `SELECT` した結果をテーブルに `INSERT` する
+- `WHERE` 句や `GROUP BY` 句も使える
+
+```sql
+-- ペースト用のテーブルを作成
+CREATE TABLE ShohinCopy (
+  shohin_id CHAR(4) NOT NULL,
+  shohin_mei VARCHAR(100) NOT NULL,
+  shohin_bunrui VARCHAR(32) NOT NULL,
+  hanbai_tanka INTEGER,
+  shiire_tanka INTEGER,
+  torokubi DATE,
+  PRIMARY KEY (shohin_id)
+);
+```
+
+```sql
+INSERT INTO ShohinCopy (
+  shohin_id, shohin_mei, shohin_bunrui, hanbai_tanka, shiire_tanka, torokubi)
+SELECT shohin_id, shohin_mei, shohin_bunrui, hanbai_tanka, shiire_tanka, torokubi
+FROM Shohin;
+
+-- 確認
+SELECT COUNT(*) FROM ShohinCopy;
+count
+-------
+     8
+```
+
+```sql
+-- ShohinBunrui テーブル作成
+CREATE TABLE ShohinBunrui (
+  shohin_bunrui VARCHAR(32) NOT NULL,
+  sum_hanbai_tanka INTEGER,
+  sum_shiire_tanka INTEGER,
+  PRIMARY KEY (shohin_bunrui)
+);
+
+INSERT INTO ShohinBunrui (
+  shohin_bunrui, sum_hanbai_tanka, sum_shiire_tanka)
+SELECT shohin_bunrui, SUM(hanbai_tanka), SUM(shiire_tanka)
+FROM Shohin
+GROUP BY shohin_bunrui;
+
+-- 確認
+SELECT * FROM ShohinBunrui;
+ shohin_bunrui | sum_hanbai_tanka | sum_shiire_tanka
+---------------+------------------+------------------
+ キッチン用品  |            11180 |             8590
+ 衣服          |             5000 |             3300
+ 事務用品      |              600 |              320
+(3 rows)
+```
+
+## 削除
+
+### DROP TABLEとDELETE文
+
+- `DROP TABLE` テーブルそのものを削除
+- `DELETE` テーブルは残しすべての行を削除
+  - `DELETE`文は`WHERE` 句のみ使える
+  - `DELETE` 文には `GROUP BY` `HAVING` `ORDER BY` 句は使えない
+- `TRUNCATE` で全行削除できる
+
+### DELETE文の構文
+
+```sql
+-- 構文
+DELETE FROM <テーブル名>;
+```
+
+```sql
+DELETE FROM ShohinCopy;
+DELETE 8 -- psqlが削除した行数を返す
+```
+
+### 削除対象を制限する
+
+`WHERE` 句で条件を指定し削除対象を制限できる。これを **探索型DELETE** と呼ぶ
+
+```sql
+-- 構文
+DELETE FROM <テーブル名> WHERE <条件>;
+```
+
+```sql
+-- 削除前
+SELECT * FROM ShohinCopy;
+ shohin_id |   shohin_mei   | shohin_bunrui | hanbai_tanka | shiire_tanka |  torokubi
+-----------+----------------+---------------+--------------+--------------+------------
+...
+ 0008      | ボールペン     | 事務用品      |          100 |              | 2009-11-11
+(8 rows)
+
+-- hanbai_tanka が4000以上の行を削除
+DELETE FROM ShohinCopy
+WHERE hanbai_tanka >= 4000;
+DELETE 2 -- psqlが削除した行数を返す
+
+-- 削除後確認
+ shohin_id |  shohin_mei  | shohin_bunrui | hanbai_tanka | shiire_tanka |  torokubi
+-----------+--------------+---------------+--------------+--------------+------------
+...
+ 0008      | ボールペン   | 事務用品      |          100 |              | 2009-11-11
+(6 rows)
+```
+
+## データの更新
