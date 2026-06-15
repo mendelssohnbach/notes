@@ -683,3 +683,223 @@ GROUP BY shiire_tanka;
 - `GROUP BY` 句で指定した列
 
 ## 集約結果に条件を指定
+
+### HAVING 句
+
+`HAVING` 集約したブループ化列に対して条件指定する場合に用いる
+
+```sql
+-- 構文
+SELECT <列名1>, <列名2>, <列名3>, ...
+FROM <テーブル名>
+GROUP BY <列名1>, <列名2>, <列名3>, ...
+-- HAVING 句は GROUP BY 句の後に書くこと
+HAVING <グループの値に対する条件>;
+```
+
+```sql
+-- GROUP BY の集約結果に対して
+-- shohin_bunrui が2件の分類だけ調べるには？
+SELECT shohin_bunrui, COUNT(*)
+FROM Shohin
+GROUP BY shohin_bunrui;
+ shohin_bunrui | count
+---------------+-------
+ キッチン用品  |     4
+ 衣服          |     2
+ 事務用品      |     2
+(3 rows)
+
+SELECT shohin_bunrui, COUNT(*)
+FROM Shohin
+GROUP BY shohin_bunrui
+HAVING COUNT(*) = 2;
+
+-- COUNT(*) はなくても動作する
+SELECT shohin_bunrui
+FROM Shohin
+GROUP BY shohin_bunrui
+HAVING COUNT(*) = 2;
+ shohin_bunrui
+---------------
+ 衣服
+ 事務用品
+ (2 rows)
+```
+
+```sql
+-- hanbai_tanka の平均が2500以上のもの
+SELECT shohin_bunrui, AVG(hanbai_tanka)
+FROM Shohin
+GROUP BY shohin_bunrui
+HAVING AVG(hanbai_tanka) >= 2500;
+```
+
+```sql
+-- SELECT 句の列名は別名を付けれる
+SELECT shohin_bunrui, AVG(hanbai_tanka) AS avb_tanka
+FROM Shohin
+GROUP BY shohin_bunrui
+HAVING AVG(hanbai_tanka) >= 2500;
+```
+
+```sql
+-- エラー
+-- HAVING 句の列名は別名を付けれない
+SELECT shohin_bunrui, AVG(hanbai_tanka) AS avg_tanka
+FROM Shohin
+GROUP BY shohin_bunrui
+HAVING AVG(hanbai_tanka) AS avg_tanka >= 2500;
+ERROR: syntax error at or near "AS"
+LINE 4: HAVING AVG(hanbai_tanka) AS avb_tanka >= 2500;
+
+-- エラー
+-- HAVING 句は別名だけで呼び出せいない
+SELECT shohin_bunrui, AVG(hanbai_tanka) AS avg_tanka
+FROM Shohin
+GROUP BY shohin_bunrui
+HAVING avg_tanka >= 2500;
+ERROR:  column "avg_tanka" does not exist
+LINE 4: HAVING avg_tanka >= 2500;
+```
+
+### HAVING 句に書ける要素
+
+- 定数
+- 集約関数
+- `GROUP BY` 句に指定した列名
+
+### WHERE 句に書いたほうが良い条件
+
+`HAVING` 句より `WHERE` 句に書いたほうが良い条件
+
+- 行に対する条件は `WHERE` 句に書く
+- グループに対する条件は `HAVING` 句に書く
+- パフォーマンスが `WHERE` 句のほうが優れている
+
+望ましくない使い方
+
+```sql
+SELECT shohin_bunrui
+FROM Shohin;
+ shohin_bunrui
+---------------
+ ...
+ キッチン用品
+ 事務用品
+(8 rows)
+
+-- グループ化した要素の含まれる値のみに絞り込める
+SELECT shohin_bunrui
+FROM Shohin
+GROUP BY shohin_bunrui
+-- shohin_bunrui列の値 キッチン用品は 行に対する条件
+HAVING shohin_bunrui = 'キッチン用品';
+ shohin_bunrui
+---------------
+ キッチン用品
+```
+
+```sql
+EXPLAIN SELECT shohin_bunrui
+FROM Shohin
+GROUP BY shohin_bunrui
+HAVING shohin_bunrui = 'キッチン用品';
+                           QUERY PLAN
+----------------------------------------------------------------
+ Group  (cost=0.00..12.75 rows=1 width=82)
+   ->  Seq Scan on shohin  (cost=0.00..12.75 rows=1 width=82)
+         Filter: ((shohin_bunrui)::text = 'キッチン用品'::text)
+(3 rows)
+```
+
+```sql
+EXPLAIN SELECT shohin_bunrui
+FROM Shohin
+WHERE shohin_bunrui = 'キッチン用品';
+                        QUERY PLAN
+----------------------------------------------------------
+ Seq Scan on shohin  (cost=0.00..12.75 rows=1 width=82)
+   Filter: ((shohin_bunrui)::text = 'キッチン用品'::text)
+(2 rows)
+```
+
+## 並び替え
+
+`ORDER BY` 並び替え
+
+```sql
+-- ASC: 昇順。暗黙として ORDER BY の規定キーワード
+SELECT shohin_mei, hanbai_tanka
+FROM Shohin
+ORDER BY hanbai_tanka ASC;
+
+-- DESC: 降順
+SELECT shohin_mei, hanbai_tanka
+FROM Shohin
+ORDER BY hanbai_tanka DESC;
+```
+
+### 複数並び替え
+
+```sql
+SELECT shohin_id, shohin_mei, hanbai_tanka, shiire_tanka
+FROM Shohin
+-- hanbai_tanka 昇順ソート後に shohin_id 昇順ソートされる
+ORDER BY hanbai_tanka, shohin_id;
+```
+
+### ソートキーに別名を使う
+
+実行順: `FROM` > `WHERE` > `GROUP BY` > `HAVING` > `SELECT` > `ORDER BY`
+
+```sql
+-- AS別名を ORDER BY 句で使う
+SELECT shohin_id AS id, shohin_mei, hanbai_tanka AS ht, shiire_tanka
+FROM Shohin
+ORDER BY ht, id;
+
+-- SELECT 句に含まれていない列でも ORDER BY 句で使える
+SELECT shohin_mei, hanbai_tanka, shiire_tanka
+FROM Shohin
+ORDER BY shohin_id;
+
+-- 集約関数も ORDER BY 句で使える
+SELECT shohin_bunrui, COUNT(*)
+FROM Shohin
+GROUP BY shohin_bunrui
+ORDER BY COUNT(*);
+ shohin_bunrui | count
+---------------+-------
+ 衣服          |     2
+ 事務用品      |     2
+ キッチン用品  |     4
+```
+
+## 列番号
+
+使うべきでない理由
+
+- SQL文が読みにくい
+  -- ANSI SQLで将来削除されるべき機能である
+
+```sql
+-- hanbai_tankaを降順、shohin_idを昇順で並び替える
+SELECT shohin_id, shohin_mei, hanbai_tanka, shiire_tanka
+FROM Shohin
+ORDER BY 3 DESC, 1;
+ shohin_id |   shohin_mei   | hanbai_tanka | shiire_tanka
+-----------+----------------+--------------+--------------
+ 0005      | 圧力鍋         |         6800 |         5000
+...
+(8 rows)
+
+SELECT shohin_id, shohin_mei, hanbai_tanka, shiire_tanka
+FROM Shohin
+ORDER BY hanbai_tanka DESC, shohin_id;
+ shohin_id |   shohin_mei   | hanbai_tanka | shiire_tanka
+-----------+----------------+--------------+--------------
+ 0005      | 圧力鍋         |         6800 |         5000
+...
+(8 rows)
+```
