@@ -1115,3 +1115,362 @@ DELETE 2 -- psqlが削除した行数を返す
 ```
 
 ## データの更新
+
+### 構文
+
+`UPDATE` データを変更/更新する
+
+```sql
+UPDATE <テーブル名> SET <列名> = <式>;
+```
+
+```sql
+SELECT * FROM Shohin;
+ shohin_id |  shohin_mei  | shohin_bunrui | hanbai_tanka | shiire_tanka |  torokubi
+-----------+--------------+---------------+--------------+--------------+------------
+ 0001      | Tシャツ      | 衣服          |         1000 |          500 | 2009-09-20
+ 0002      | 穴あけパンチ | 事務用品      |          500 |          320 | 2009-09-11
+ 0004      | 包丁         | キッチン用品  |         3000 |         2800 | 2009-09-20
+ 0006      | フォーク     | キッチン用品  |          500 |              | 2009-09-20
+ 0007      | おろしがね   | キッチン用品  |          880 |          790 | 2008-04-28
+ 0008      | ボールペン   | 事務用品      |          100 |              | 2009-11-11
+(6 rows)
+```
+
+```sql
+-- torokubi を全行2009/10/10に更新
+UPDATE Shohin
+SET torokubi = '2009-10-10';
+```
+
+### 条件指定
+
+**探索型UPDATE** 条件を指定した `UPDATE`
+
+```sql
+-- 構文
+UPDATE <テーブル名>
+SET <列名> = <式>
+WHERE <条件>;
+```
+
+```sql
+-- shohin_bunrui がキッチン用品である行を hanbai_tanka を10倍にする
+UPDATE Shohin
+SET hanbai_tanka = hanbai_tanka * 10
+WHERE shohin_bunrui = 'キッチン用品';
+UPDATE 3 -- 更新された行数が返される
+```
+
+### NULLで更新
+
+**NULLクリア** 列をNULLで更新すること
+
+```sql
+-- shohin_id=0008 の登録日をNULLクリア
+UPDATE Shohin
+SET torokubi = NULL
+WHERE shohin_id = '0008';
+UPDATE 1 -- 更新された行数が返される
+```
+
+### 複数列の更新
+
+```sql
+UPDATE Shohin
+SET hanbai_tanka = hanbai_tanka * 10,
+  shiire_tanka = shiire_tanka / 2
+WHERE shohin_bunrui = 'キッチン用品';
+UPDATE 3 -- 更新された行数が返される
+```
+
+## トランザクション
+
+**トランザクション**
+
+- セットで実行されるべき1つ以上の更新処理
+- データ更新処理の確定や取り消しを管理できる
+- 処理を終わらせるコマンドに **COMMIT** と **ROLLBACK** がある
+- ACID特性を守ること
+  - A: Atomicity(原子性)
+  - C: Consistency(一貫性)
+  - I: Isolation(独立性)
+  - D: Durability(永続性)
+
+### トランザクションとは
+
+データベースに対する1つ以上の更新をまとめた名称
+
+### トランザクションを作る
+
+```sql
+-- 構文
+BEGIN TRANSACTION; -- トランザクション開始文;
+
+DML文1, -- INSERT/UPDATE/DELETE
+DML文2,
+DML文3,
+...
+
+トランザクション終了文(COMMIT or ROLLBACK);
+```
+
+- **BEGIN TRANSACTION** 処理の開始
+- **COMMIT** 処理の確定
+- **ROLLBACK** 処理の取り消し
+
+```sql
+-- 確定処理
+BEGIN TRANSACTION; -- トランザクション開始
+
+  -- カッターシャツの販売単価を1000円値引き
+  UPDATE Shohin
+  SET hanbai_tanka = hanbai_tanka - 1000
+  WHERE shohin_mei = 'カッターシャツ';
+
+  -- Tシャツの販売単価を1000円値上げ
+  UPDATE Shohin
+  SET hanbai_tanka = hanbai_tanka + 1000
+  WHERE shohin_mei = 'Tシャツ';
+
+COMMIT; -- トランザクション確定
+```
+
+```sql
+-- 取り消し処理
+BEGIN TRANSACTION; -- トランザクション開始
+
+  -- カッターシャツの販売単価を1000円値引き
+  UPDATE Shohin
+  SET hanbai_tanka = hanbai_tanka - 1000
+  WHERE shohin_mei = 'カッターシャツ';
+
+  -- Tシャツの販売単価を1000円値上げ
+  UPDATE Shohin
+  SET hanbai_tanka = hanbai_tanka + 1000
+  WHERE shohin_mei = 'Tシャツ';
+
+ROLLBACK; -- トランザクション取り消し
+```
+
+### ACID特性
+
+原子性(Atomicity)
+: トランザクション終了時に含まれていた更新処理はすべて実行されるか、すべて実行されない状態で終了すること
+
+一貫性(Consistency)
+: トランザクションに含まれる処理は、設定された制約(主キー制約、NOT NULL制約)を満たす
+
+独立性(Isolation)
+: トランザクション同士が互いに干渉を受けない
+
+永続性(Durability)
+: トランザクションが終了したら、その時点でデータの状態が保存される
+
+# 複雑な問い合わせ
+
+## ビュー
+
+- 中に `SELECT` 文が保存される
+- 複雑な集約を楽に行える
+- `CREATE VIEW` で作成する
+- `ORDER BY` 句は使えない -　更新には制限がる
+- `DROP VIEW` で削除
+
+### ビューとテーブル
+
+- **ビュー** は実際のデータを保存しない
+- **ビュー** は `SELECT` 文を保存する
+- `SELECT` 文を実行し一時的に仮想テーブルを作る
+- `SELECT` 文の使いまわしが可能
+- データを保存しないので、保存容量を節約できる
+
+### 作り方
+
+```sql
+CREATE VIEW ビュー名 (<ビューの列名1>, <ビューの列名2>, ...) AS <SELECT文>;
+```
+
+```sql
+-- Shohin を元にビューを作成
+-- shohin_bunrui 毎の集計商品数
+CREATE VIEW ShohinSum (
+  shohin_bunrui, cnt_shohin
+) AS
+SELECT shohin_bunrui, COUNT(*)
+FROM Shohin
+GROUP BY shohin_bunrui;
+CREATE VIEW -- psqlから返されたメッセージ
+
+-- 確認
+SELECT shohin_bunrui, cnt_shohin
+FROM ShohinSum; -- ビュー名指定
+ shohin_bunrui | cnt_shohin
+```
+
+1. 最初にビューに定義した `SELECT` 文を実行
+2. その結果に対して、ビューを `FROM` 句にした `SELECT' 文を実行
+
+```sql
+-- 既存のビューを元にビューを作成
+-- パフォーマンス低下を招くので避ける
+CREATE VIEW ShohinSumJim (
+  shohin_bunrui, cnt_shohin
+) AS
+SELECT shohin_bunrui, cnt_shohin
+FROM ShohinSum
+WHERE shohin_bunrui = '事務用品';
+
+-- 確認
+SELECT * FROM ShohinSumJim;
+```
+
+### 制限事項
+
+`ORDER BY` 句は使えない。行に順序はないという基本原則に違反するため
+
+許される更新系のビュー
+
+- `SELECT` 句に `DISTINCT` が含まれていない
+- `FROM` 句には1テーブルのみ存在する
+- `GROUP BY` 句を使っていない
+- `HAVING` 句を使ってない
+
+```sql
+-- 元テーブル Shohin と完全一致の列を持つビューを定義
+CREATE VIEW ShohinJim (
+  shohin_id, shohin_mei, shohin_bunrui, hanbai_tanka, shiire_tanka, torokubi)
+AS
+SELECT *
+FROM Shohin
+WHERE shohin_bunrui = '事務用品';
+
+--
+INSERT INTO ShohinJim
+VALUES (
+  '0009', '印鑑', '事務用品', 95, 10, '2009-11-30'
+);
+
+-- 確認
+SELECT * FROM  ShohinJim;
+ shohin_id |  shohin_mei  | shohin_bunrui | hanbai_tanka | shiire_tanka |  torokubi
+-----------+--------------+---------------+--------------+--------------+------------
+ 0002      | 穴あけパンチ | 事務用品      |          500 |          320 | 2009-09-11
+ 0008      | ボールペン   | 事務用品      |          100 |              | 2009-11-11
+ 0009      | 印鑑         | 事務用品      |           95 |           10 | 2009-11-30
+
+ -- 元テーブルにも `INSERT` されている
+ SELECT * FROM  Shohin;
+ shohin_id |   shohin_mei   | shohin_bunrui | hanbai_tanka | shiire_tanka |  torokubi
+-----------+----------------+---------------+--------------+--------------+------------
+...
+ 0009      | 印鑑           | 事務用品      |           95 |           10 | 2009-11-30
+(9 rows)
+```
+
+```sql
+-- ShohinJim の定義を確認、元テーブルの定義がコピーされている
+postgres=# \d ShohinJim
+                         View "public.shohinjim"
+    Column     |          Type          | Collation | Nullable | Default
+---------------+------------------------+-----------+----------+---------
+ shohin_id     | character(4)           |           |          |
+ shohin_mei    | character varying(100) |           |          |
+ shohin_bunrui | character varying(32)  |           |          |
+ hanbai_tanka  | integer                |           |          |
+ shiire_tanka  | integer                |           |          |
+ torokubi      | date                   |           |          |
+```
+
+### 削除
+
+```sql
+-- 構文
+DROP VIEW <ビュー名>;
+```
+
+```sql
+-- 多段ビューの作成元ビューを削除する場合、以下のエラーが発生する
+DROP VIEW ShohinSum;
+ERROR:  cannot drop view ShohinSum because other objects depend on it
+DETAIL:  view ShohinSumJim depends on view shohinSum
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+-- `CASCADE` 句を付ける
+DROP VIEW ShohinSum CASCADE;
+
+-- 確認
+\d
+List of relations
+Schema | Name | Type | Owner
+--------+--------------+-------+----------
+...
+(2 rows)
+```
+
+## サブクエリ
+
+- 使い捨てのビューである
+- `SELECT` 文実行後に消去される
+- 名前が必要
+- **スカラサブクエリ** とは1行1列のみを返す
+
+## サブクエリとビュー
+
+```sql
+-- 商品分類毎に商品数を集計するビュー
+CREATE VIEW ShohinSum (shohin_bunrui, cnt_shohin)
+AS
+SELECT shohin_bunrui, COUNT(*)
+FROM Shohin
+GROUP BY shohin_bunrui;
+
+--　ShohinSumビューを確認
+SELECT shohin_bunrui, cnt_shohin
+FROM ShohinSum;
+```
+
+サブクエリに書き換え
+
+```sql
+SELECT shohin_bunrui, cnt_shohin
+FROM (
+  -- ビュー定義のSELECT文をそのまま書く
+  SELECT shohin_bunrui, COUNT(*) AS cnt_shohin
+  FROM Shohin
+  GROUP BY shohin_bunrui) AS ShohinSum; -- ShohinSum はサブクエリ名
+```
+
+多段サブクエリ
+
+```sql
+SELECT shohin_bunrui, cnt_shohin
+FROM (
+  -- 2番目に実行される
+  SELECT *
+  FROM (
+    -- 1番目に実行される
+    -- 商品分類毎に商品数を集計する
+    SELECT shohin_bunrui, COUNT(*) AS cnt_shohin
+    FROM Shohin
+    GROUP BY shohin_bunrui
+  ) AS ShohinSum
+-- 別名 cnt_shohin が4に絞り込み
+-- サブクエリ名は ShohinSum2
+WHERE cnt_shohin = 4) AS ShohinSum2;
+ shohin_bunrui | cnt_shohin
+---------------+------------
+ キッチン用品  |          4
+(1 row)
+```
+
+### サブクエリの名前
+
+処理内容を反映した名称を付けること
+
+### スカラサブクエリ
+
+**スカラサブクエリ**
+
+- 必ず1行1列だけの戻り値を返す
+- スカラの特性を活かして比較演算子の入力値として使える
