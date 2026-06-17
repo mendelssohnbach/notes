@@ -1474,3 +1474,133 @@ WHERE cnt_shohin = 4) AS ShohinSum2;
 
 - 必ず1行1列だけの戻り値を返す
 - スカラの特性を活かして比較演算子の入力値として使える
+
+### WHERE句でサブクエリ
+
+販売単価が平均単価より高い商品を求める
+
+```sql
+-- 平均単価を求める スカラ値
+SELECT AVG(hanbai_tanka)
+FROM Shohin;
+
+-- 平均単価を求めるクエリをサブクエリに組み込む
+SELECT shohin_id, shohin_mei, hanbai_tanka
+FROM Shohin
+WHERE hanbai_tanka > (
+  SELECT AVG(hanbai_tanka)
+  FROM Shohin
+);
+ shohin_id |   shohin_mei   | hanbai_tanka
+-----------+----------------+--------------
+ 0003      | カッターシャツ |         4000
+ 0004      | 包丁           |         3000
+ 0005      | 圧力鍋         |         6800
+```
+
+### スカラサブクエリを書ける場所
+
+- `WHERE` 句
+- 定数
+- 列
+- `GROUP BY` 句
+- `HAVING` 句
+- `ORDER BY` 句
+
+```sql
+-- SELECT句でスカラサブクエリを使う
+SELECT
+  shohin_id,
+  shohin_mei,
+  hanbai_tanka,
+  (
+    SELECT
+      AVG(hanbai_tanka)
+      FROM Shohin
+  ) AS avg_tanka
+FROM Shohin;
+ shohin_id |   shohin_mei   | hanbai_tanka |       avg_tanka
+-----------+----------------+--------------+-----------------------
+ 0001      | Tシャツ        |         1000 | 2097.5000000000000000
+ 0002      | 穴あけパンチ   |          500 | 2097.5000000000000000
+...
+(8 rows)
+```
+
+```sql
+-- HAVING句でスカラサブクエリを使う
+-- 商品分類毎の平均販売単価が
+-- 商品全体の販売単価より高い商品部類を求める
+SELECT shohin_bunrui, AVG(hanbai_tanka)
+FROM Shohin
+GROUP BY shohin_bunrui
+HAVING AVG(hanbai_tanka) > (
+  SELECT AVG(hanbai_tanka) FROM Shohin
+);
+ shohin_bunrui |          avg
+---------------+-----------------------
+ キッチン用品  | 2795.0000000000000000
+ 衣服          | 2500.0000000000000000
+(2 rows)
+```
+
+### 注意点
+
+サブクエリは複数行を返してはいけない
+
+## 相関サブクエリ
+
+- 小分けにしたブループ内での比較
+- `GROUP BY` 句と同じように集合のカット機能がある
+- 結合条件はサブクエリの中に書く
+
+```sql
+-- 商品分類毎に平均販売単価より高い商品
+
+-- 商品分類別に平均価格を求める
+SELECT AVG(hanbai_tanka)
+FROM Shohin
+GROUP BY shohin_bunrui;
+
+-- 商品分類毎に平均販売単価を求める相関サブクエリ
+SELECT
+  shohin_bunrui, shohin_mei, hanbai_tanka
+FROM Shohin AS S1
+WHERE hanbai_tanka > (
+  SELECT AVG(hanbai_tanka)
+  FROM Shohin AS S2
+  WHERE S1.shohin_bunrui = S2.shohin_bunrui
+  GROUP BY shohin_bunrui
+);
+ shohin_bunrui |   shohin_mei   | hanbai_tanka
+---------------+----------------+--------------
+ 事務用品      | 穴あけパンチ   |          500
+ 衣服          | カッターシャツ |         4000
+ キッチン用品  | 包丁           |         3000
+ キッチン用品  | 圧力鍋         |         6800
+(4 rows)
+```
+
+SELECT shohin_bunrui, AVG(hanbai_tanka)
+FROM Shohin
+GROUP BY shohin_bunrui;
+
+### 結合条件はサブクエリの中に書く
+
+- サブクエリ内で付けられた相関名は、そのサブクエリ内でしか使えない
+- 内側から外側は見えるが、外側から内側は見えない
+
+```sql
+SELECT
+  shohin_bunrui, shohin_mei, hanbai_tanka
+FROM Shohin AS S1 -- 相関名 S1
+WHERE hanbai_tanka > (
+  SELECT AVG(hanbai_tanka)
+  -- 相関名 S2は()の外は見えない
+  FROM Shohin AS S2 -- 相関名 S2
+  WHERE S1.shohin_bunrui = S2.shohin_bunrui
+  GROUP BY shohin_bunrui
+);
+```
+
+# 関数、述語、CASE式
