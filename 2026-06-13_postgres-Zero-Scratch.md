@@ -1933,3 +1933,189 @@ WHERE NOT EXISTS (
 ```
 
 ## CASE式
+
+- 単純CASE式と検索CASE式がある
+- CASE式の **ELSE** 句は省略しない
+- CASE式の \*END\*\* は必須
+- `SELECT` 文の結果を柔軟に組み換えできる
+- 演算機能とみなせる
+
+### CASE式の構文
+
+`WHEN` 句の評価式は、真理値(列=値)であること
+
+```sql
+-- 構文
+CASE
+  WHEN <評価式> THEN <式>
+  WHEN <評価式> THEN <式>
+  ...
+  ELSE <式>
+END
+```
+
+### 使い方
+
+```sql
+-- A: 衣服のような表示を行う
+SELECT shohin_mei,
+  CASE
+    WHEN shohin_bunrui = '衣服' THEN 'A:' || shohin_bunrui
+    WHEN shohin_bunrui = '事務用品' THEN 'B:' || shohin_bunrui
+    WHEN shohin_bunrui = 'キッチン用品' THEN 'C:' || shohin_bunrui
+    ELSE NULL
+  END AS abc_shohin_bunrui
+FROM Shohin;
+```
+
+```sql
+SELECT shohin_bunrui, SUM(hanbai_tanka) AS sum_tanka
+FROM Shohin
+GROUP BY shohin_bunrui;
+ shohin_bunrui | sum_tanka
+---------------+-----------
+ キッチン用品  |     11180
+ 衣服          |      5000
+ 事務用品      |       600
+(3 rows)
+
+-- ピボット(行列変換)を行う
+SELECT
+  -- shohin_bunruiが衣類ならhanbai_tankaを合計、そうでなければ0を列名sum_tanka_ifukuとして返す
+  SUM(CASE WHEN shohin_bunrui = '衣服' THEN hanbai_tanka ELSE 0 END) AS sum_tanka_ifuku,
+  -- shohin_bunruiがキッチン用品ならhanbai_tankaを合計、そうでなければ0を列名sum_tanka_ifukuとして返す
+  SUM(CASE WHEN shohin_bunrui = 'キッチン用品' THEN hanbai_tanka ELSE 0 END) AS sum_tanka_kitchen,
+  -- shohin_bunruiが事務用品ならhanbai_tankaを合計、そうでなければ0を列名sum_tanka_ifukuとして返す
+  SUM(CASE WHEN shohin_bunrui = '事務用品' THEN hanbai_tanka ELSE 0 END) AS sum_tanka_jimu
+FROM Shohin;
+ sum_tanka_ifuku | sum_tanka_kitchen | sum_tanka_jimu
+-----------------+-------------------+----------------
+            5000 |             11180 |            600
+(1 row)
+```
+
+```sql
+SELECT
+  SUM(CASE WHEN hanbai_tanka <= 1000 THEN 1 ELSE 0 END) AS low_price,
+  SUM(CASE WHEN hanbai_tanka BETWEEN 1001 AND 3000 THEN 1 ELSE 0 END) AS mid_price,
+  SUM(CASE WHEN hanbai_tanka >= 3001 THEN 1 ELSE 0 END) AS low_price
+FROM Shohin;
+ low_price | mid_price | low_price
+-----------+-----------+-----------
+         5 |         1 |         0
+```
+
+# 集合演算
+
+## テーブルの足し算と引き算
+
+- 集合演算とはレコードの四則演算である
+- **UNION** **INTERSECT** **EXCEPT** などの集合演算子を使う
+- デフォルトで重複行を排除する
+- **ALL** 奥プションで重複行を残せる
+- 2つのレコードを集める
+- 共通するレコードを集める
+- 片方のテーブルにあるレコードのみ集める
+
+### UNION テーブルの足し算
+
+```sql
+-- Shohin2テーブル
+CREATE TABLE Shohin2
+(shohin_id     CHAR(4)      NOT NULL,
+ shohin_mei    VARCHAR(100) NOT NULL,
+ shohin_bunrui VARCHAR(32)  NOT NULL,
+ hanbai_tanka  INTEGER      ,
+ shiire_tanka  INTEGER      ,
+ torokubi      DATE         ,
+ PRIMARY KEY (shohin_id));
+
+ -- データ投入
+ BEGIN TRANSACTION;
+
+INSERT INTO Shohin2 VALUES ('0001', 'Tシャツ' ,'衣服', 1000, 500, '2009-09-20');
+INSERT INTO Shohin2 VALUES ('0002', '穴あけパンチ', '事務用品', 500, 320, '2009-09-11');
+INSERT INTO Shohin2 VALUES ('0003', 'カッターシャツ', '衣服', 4000, 2800, NULL);
+INSERT INTO Shohin2 VALUES ('0009', '手袋', '衣服', 800, 500, NULL);
+INSERT INTO Shohin2 VALUES ('0010', 'やかん', 'キッチン用品', 2000, 1700, '2009-09-20');
+
+COMMIT;
+```
+
+```sql
+-- Shohin1+Shohin2
+SELECT shohin_id, shohin_mei
+FROM Shohin
+UNION
+SELECT shohin_id, shohin_mei
+FROM Shohin2;
+```
+
+### 注意事項
+
+- 演算対象のレコード数は同じであること
+- レコードの列のデータ型が一致していること
+- `ORDER BY` 句は最後に1つだけ
+
+```sql
+SELECT shohin_id, shohin_mei
+FROM Shohin
+WHERE shohin_bunrui = 'キッチン用品'
+UNION
+SELECT shohin_id, shohin_mei
+FROM Shohin2
+WHERE shohin_bunrui = 'キッチン用品'
+ORDER BY shohin_id;
+```
+
+### ALLオプション 超副業を残す
+
+```sql
+SELECT shohin_id, shohin_mei
+FROM Shohin
+UNION ALL
+SELECT shohin_id, shohin_mei
+FROM Shohin2;
+```
+
+### INTERSECT 共通部分の選択
+
+```sql
+SELECT shohin_id, shohin_mei
+FROM Shohin
+INTERSECT
+SELECT shohin_id, shohin_mei
+FROM Shohin2;
+```
+
+### EXCEPT 引き算
+
+```sql
+SELECT shohin_id, shohin_mei
+FROM Shohin
+EXCEPT
+SELECT shohin_id, shohin_mei
+FROM Shohin2;
+ shohin_id | shohin_mei
+-----------+------------
+ 0006      | フォーク
+ 0005      | 圧力鍋
+ 0004      | 包丁
+ 0007      | おろしがね
+ 0008      | ボールペン
+(5 rows)
+
+-- 引き算の順序で結果が変わる
+SELECT shohin_id, shohin_mei
+FROM Shohin2
+EXCEPT
+SELECT shohin_id, shohin_mei
+FROM Shohin;
+ shohin_id | shohin_mei
+-----------+------------
+ 0009      | 手袋
+ 0010      | やかん
+(2 rows)
+```
+
+## 結合
