@@ -1604,3 +1604,332 @@ WHERE hanbai_tanka > (
 ```
 
 # 関数、述語、CASE式
+
+## いろいろな関数
+
+- 算術関数/文字列関数/日付関数/変換関数/集約関数
+- 必要になったら調べる
+
+[第9章 関数と演算子](https://www.postgresql.jp/document/18/html/functions.html)
+
+### 算術関数
+
+```sql
+CREATE TABLE SampleMath
+(m NUMERIC (10, 3),
+n INTEGER,
+p INTEGER);
+
+BEGIN TRANSACTION;
+
+INSERT INTO SampleMath(m, n, p) VALUES (500,  0,    NULL);
+INSERT INTO SampleMath(m, n, p) VALUES (-180, 0,    NULL);
+INSERT INTO SampleMath(m, n, p) VALUES (NULL, NULL, NULL);
+INSERT INTO SampleMath(m, n, p) VALUES (NULL, 7,    3);
+INSERT INTO SampleMath(m, n, p) VALUES (NULL, 5,    2);
+INSERT INTO SampleMath(m, n, p) VALUES (NULL, 4,    NULL);
+INSERT INTO SampleMath(m, n, p) VALUES (8,    NULL, 3);
+INSERT INTO SampleMath(m, n, p) VALUES (2.27, 1,    NULL);
+INSERT INTO SampleMath(m, n, p) VALUES (5.555,2,    NULL);
+INSERT INTO SampleMath(m, n, p) VALUES (NULL, 1,    NULL);
+INSERT INTO SampleMath(m, n, p) VALUES (8.76, NULL, NULL);
+
+COMMIT;
+```
+
+```sql
+-- ABS: 絶対値
+SELECT m, ABS(m) AS abs_col FROM SampleMath;
+
+-- MOD: 剰余
+SELECT n, p, MOD(n, p) AS mod_col
+FROM SampleMath;
+
+-- ROUND: 四捨五入
+SELECT m, n, ROUND(m, n) AS round_col
+FROM SampleMath;
+```
+
+### 文字列関数
+
+```sql
+CREATE TABLE SampleStr
+(str1  VARCHAR(40),
+ str2  VARCHAR(40),
+ str3  VARCHAR(40));
+
+BEGIN TRANSACTION;
+
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('あいう',	'えお'	,	NULL);
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('abc'	,	'def'	,	NULL);
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('山田'	,	'太郎'  ,	'です');
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('aaa'	,	NULL    ,	NULL);
+INSERT INTO SampleStr (str1, str2, str3) VALUES (NULL	,	'あああ',	NULL);
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('@!#$%',	NULL	,	NULL);
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('ABC'	,	NULL	,	NULL);
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('aBC'	,	NULL	,	NULL);
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('abc太郎',	'abc'	,	'ABC');
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('abcdefabc','abc'	,	'ABC');
+INSERT INTO SampleStr (str1, str2, str3) VALUES ('ミックマック',	'ッ', 'っ');
+
+COMMIT;
+```
+
+```sql
+-- ||: 連結
+SELECT str1, str2, str1 || str2 AS str_concat
+FROM SampleStr;
+
+SELECT str1, str2, str3, str1 || str2 || str3 AS str_concat
+FROM SampleStr
+WHERE str1 = '山田';
+
+-- LENGTH: 文字列長
+SELECT str1, LENGTH(str1) AS len_str
+FROM SampleStr;
+
+-- LOWER: 小文字化
+SELECT str1, LOWER(str1) AS low_str
+FROM SampleStr
+WHERE str1 IN ('ABC', 'aBC', 'abc', '山田');
+
+-- REPLACE: 文字列置換
+-- REPLACE(対象文字列, 置換前文字列, 置換後文字列)
+SELECT
+  str1, str2, str3,
+  REPLACE(str1, str2, str3) AS rep_str
+FROM SampleStr;
+
+-- SUBSTRING: 文字列切り出し
+-- SUBSTRING(対象文字列 FROM 切り出し開始位置, FOR 切り出す文字数)
+SELECT str1, SUBSTRING(str1 FROM 3 FOR 2) as sub_str
+FROM SampleStr;
+
+-- UPPER: 大文字化
+SELECT str1, UPPER(str1) AS up_str
+FROM SampleStr
+WHERE str1 IN ('ABC', 'aBC', 'abc', '山田');
+```
+
+### 日付関数
+
+```sql
+-- CURRENT_DATE: 現在の日付
+SELECT CURRENT_DATE;
+
+-- CURRENT_TIME: 現在の時刻
+SELECT CURRENT_TIME;
+
+-- CURRENT_TIMESTAMP: 現在の日時
+SELECT CURRENT_TIMESTAMP;
+
+-- EXTRACT: 日付要素の切り出し
+-- EXTRACT(日付要素 FROM 日付)
+SELECT CURRENT_TIMESTAMP,
+  EXTRACT(YEAR FROM CURRENT_TIMESTAMP) AS Year,
+  EXTRACT(MONTH FROM CURRENT_TIMESTAMP) AS Month,
+  EXTRACT(DAY FROM CURRENT_TIMESTAMP) AS Day,
+  EXTRACT(HOUR FROM CURRENT_TIMESTAMP) AS Hour,
+  EXTRACT(MINUTE FROM CURRENT_TIMESTAMP) AS Minute,
+  EXTRACT(SECOND FROM CURRENT_TIMESTAMP) AS Second;
+```
+
+### 変換関数
+
+```sql
+-- CAST: 型変換
+-- CAST(変換前の値 AS 変換するデータ型)
+SELECT CAST('0001' AS INTEGER) AS int_col;
+
+--COALESCE: NULLでない最初の値を返す
+SELECT
+  COALESCE(NULL, 1) AS col_1,
+  COALESCE(NULL, 'test', NULL) AS col_2,
+  COALESCE(NULL, NULL, '2009-11-01') AS col_3;
+   col_1 | col_2 |   col_3
+-------+-------+------------
+     1 | test  | 2009-11-01
+
+SELECT COALESCE(str2, 'NULLです') FROM SampleStr;
+SELECT COALESCE(str2, '値を返す', 'NULLです') FROM SampleStr;
+```
+
+## 述語
+
+-- 戻り値が真理値に成る
+-- **LIKE** 前方一致/中間一致/広報一致
+-- **BETWEEN** の引数は3つ
+-- **IN NULL** でNULLを選択
+-- **IN** , **EXISTS** はサブクエリを引数に取れる
+
+### LIKE述語
+
+文字列の部分一致に使う
+
+```sql
+CREATE TABLE SampleLike
+( strcol VARCHAR(6) NOT NULL,
+  PRIMARY KEY (strcol));
+
+BEGIN TRANSACTION;
+
+INSERT INTO SampleLike (strcol) VALUES ('abcddd');
+INSERT INTO SampleLike (strcol) VALUES ('dddabc');
+INSERT INTO SampleLike (strcol) VALUES ('abdddc');
+INSERT INTO SampleLike (strcol) VALUES ('abcdd');
+INSERT INTO SampleLike (strcol) VALUES ('ddabc');
+INSERT INTO SampleLike (strcol) VALUES ('abddc');
+
+COMMIT;
+```
+
+```sql
+-- 前方一致
+-- % 0文字以上の任意の文字列
+SELECT * FROM SampleLike WHERE strcol LIKE 'ddd%';
+
+-- 中間一致
+SELECT * FROM SampleLike WHERE strcol LIKE '%ddd%';
+
+-- 後方一致
+SELECT * FROM SampleLike WHERE strcol LIKE '%ddd';
+
+-- '_' 任意の1文字
+-- 後方一致: abcで始まり任意の2文字
+SELECT * FROM SampleLike WHERE strcol LIKE 'abc__';
+-- 後方一致: abcで始まり任意の3文字
+SELECT * FROM SampleLike WHERE strcol LIKE 'abc___';
+```
+
+### BETWEEN述語
+
+範囲検索
+
+```sql
+SELECT shohin_mei, hanbai_tanka
+FROM Shohin
+WHERE hanbai_tanka BETWEEN 100 AND 1000;
+```
+
+### IS NULL/IS NOT NULL
+
+- `IS NULL` NULLの行を選択
+- `IS NOT NULL` NULLでない行を選択
+
+```sql
+-- shiire_tankaがNULLの商品を選択
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shiire_tanka IS NULL;
+
+-- shiire_tankaがNULLでない商品を選択
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shiire_tanka IS NOT NULL;
+```
+
+### IN述語
+
+```sql
+-- IN述語で複数の仕入単価を指定
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shiire_tanka IN (320, 500, 5000);
+
+-- MOT IN述語
+SELECT shohin_mei, shiire_tanka
+FROM Shohin
+WHERE shiire_tanka NOT IN (320, 500, 5000);
+```
+
+### IN述語の引数にサブクエリ
+
+- テーブルを引数に取れる
+- ビューをを引数に取れる
+
+```sql
+-- 商品店舗テーブルの作成
+-- 主キー tenpo_id,shohin_id
+CREATE TABLE TenpoShohin
+(tenpo_id  CHAR(4)       NOT NULL,
+ tenpo_mei  VARCHAR(200) NOT NULL,
+ shohin_id CHAR(4)       NOT NULL,
+ suryo     INTEGER       NOT NULL,
+ PRIMARY KEY (tenpo_id, shohin_id));
+
+-- データ投入
+BEGIN TRANSACTION;
+
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000A',	'東京',		'0001',	30);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000A',	'東京',		'0002',	50);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000A',	'東京',		'0003',	15);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000B',	'名古屋',	'0002',	30);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000B',	'名古屋',	'0003',	120);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000B',	'名古屋',	'0004',	20);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000B',	'名古屋',	'0006',	10);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000B',	'名古屋',	'0007',	40);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000C',	'大阪',		'0003',	20);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000C',	'大阪',		'0004',	50);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000C',	'大阪',		'0006',	90);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000C',	'大阪',		'0007',	70);
+INSERT INTO TenpoShohin (tenpo_id, tenpo_mei, shohin_id, suryo) VALUES ('000D',	'福岡',		'0001',	100);
+
+COMMIT;
+```
+
+```sql
+-- 大阪店 000C のすべての商品を求める
+SELECT shohin_id
+FROM TenpoShohin
+WHERE tenpo_id = '000C';
+
+-- 大阪店 000C の商品販売単価を求める
+-- STEP1の結果から2列を表示
+SELECT shohin_mei, hanbai_tanka
+FROM Shohin
+WHERE shohin_id IN (
+  -- STEP1: 大阪店 000C のすべてのshohin_idを求める
+  SELECT shohin_id
+  FROM TenpoShohin
+  WHERE tenpo_id = '000C'
+);
+
+-- NOT INの使用例
+SELECT shohin_mei, hanbai_tanka
+FROM shohin
+WHERE shohin_id NOT IN ('0001', '0002', '0003');
+```
+
+### EXISTS述語
+
+- `EXISTS` はほぼ IN` 述語で代用可能
+- 条件に合致するレコードの存在有無を調べる
+- 引数は常に相関サブクエリである
+
+```sql
+-- 大阪店 000C の商品販売単価を求める
+-- `TS.shohin_id = S.shohin_id` と定義しているので相関サブクエリ
+SELECT shohin_mei, hanbai_tanka
+FROM Shohin AS S
+WHERE EXISTS (
+  -- `SELECT *` この記述は習慣である
+  SELECT *
+  FROM TenpoShohin AS TS
+  WHERE TS.tenpo_id = '000C'
+  AND TS.shohin_id = S.shohin_id
+);
+
+-- 東京店に置いてある商品以外の販売単価を求める
+-- NOT IN を NOT EXISTS に書き換え
+SELECT shohin_mei, hanbai_tanka
+FROM Shohin AS S
+WHERE NOT EXISTS (
+  -- `SELECT *` この記述は習慣である
+  SELECT *
+  FROM TenpoShohin AS TS
+  WHERE TS.tenpo_id = '000A'
+  AND TS.shohin_id = S.shohin_id
+);
+```
+
+## CASE式
