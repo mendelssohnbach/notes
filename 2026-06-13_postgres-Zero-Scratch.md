@@ -2119,3 +2119,169 @@ FROM Shohin;
 ```
 
 ## 結合
+
+- **JOIN** 列方向の結合
+- 内部結合と外部結合がある
+
+### 内部結合
+
+`INNER JOIN`
+
+- 結合テーブルの共通列名はテーブル別名 + 列名と記述する
+- 結合テーブルで重複しない列名は、読みやすさを考慮し、テーブル別名 + 列名と記述する
+
+**Shohin** テーブルと **TenpoShohin** テーブルの2つで学ぶ
+
+```sql
+postgres=# \d shohin
+                          Table "public.shohin"
+    Column     |          Type          | Collation | Nullable | Default
+---------------+------------------------+-----------+----------+---------
+ shohin_id     | character(4)           |           | not null |
+ shohin_mei    | character varying(100) |           | not null |
+ shohin_bunrui | character varying(32)  |           | not null |
+ hanbai_tanka  | integer                |           |          |
+ shiire_tanka  | integer                |           |          |
+ torokubi      | date                   |           |          |
+Indexes:
+    "shohin_pkey" PRIMARY KEY, btree (shohin_id)
+
+SELECT * FROM Shohin LIMIT 3;
+ shohin_id |   shohin_mei   | shohin_bunrui | hanbai_tanka | shiire_tanka |  torokubi
+-----------+----------------+---------------+--------------+--------------+------------
+ 0001      | Tシャツ        | 衣服          |         1000 |          500 | 2009-09-20
+ 0002      | 穴あけパンチ   | 事務用品      |          500 |          320 | 2009-09-11
+ 0003      | カッターシャツ | 衣服          |         4000 |         2800 |
+(3 rows)
+
+postgres=# \d tenposhohin
+                     Table "public.tenposhohin"
+  Column   |          Type          | Collation | Nullable | Default
+-----------+------------------------+-----------+----------+---------
+ tenpo_id  | character(4)           |           | not null |
+ tenpo_mei | character varying(200) |           | not null |
+ shohin_id | character(4)           |           | not null |
+ suryo     | integer                |           | not null |
+Indexes:
+    "tenposhohin_pkey" PRIMARY KEY, btree (tenpo_id, shohin_id)
+
+SELECT * FROM TenpoShohin LIMIT 3;
+ tenpo_id | tenpo_mei | shohin_id | suryo
+----------+-----------+-----------+-------
+ 000A     | 東京      | 0001      |    30
+ 000A     | 東京      | 0002      |    50
+ 000A     | 東京      | 0003      |    15
+(3 rows)
+```
+
+```sql
+-- TenpoShohin と Shohin 両方の共通列 shohin_id で内部結合
+SELECT
+  TS.tenpo_id, TS.tenpo_mei, TS.shohin_id,
+  S.shohin_mei, S.hanbai_tanka
+FROM TenpoShohin AS TS INNER JOIN Shohin S
+  ON TS.shohin_id = S.shohin_id;
+
+-- WHERE句と組み合わせる
+SELECT
+  TS.tenpo_id, TS.tenpo_mei, TS.shohin_id,
+  S.shohin_mei, S.hanbai_tanka
+FROM TenpoShohin AS TS INNER JOIN Shohin S
+  ON TS.shohin_id = S.shohin_id
+WHERE TS.tenpo_id = '000A';
+```
+
+### 外部結合
+
+`OUTER JOIN`
+
+- どちらか一方のテーブルに存在するなら出力される
+- 固定帳票の印刷などで使われる
+- `LEFT JOIN` で FROM 句の左側テーブルをマスターとする
+  - `LEFT JOIN` を使うことが一般的
+- `RIGHT JOIN` で FROM 句の右側テーブルをマスターとする
+
+```sql
+-- LEFT JOINで外部結合
+SELECT
+  TS.tenpo_id, TS.tenpo_mei, TS.shohin_id,
+  S.shohin_mei, S.hanbai_tanka
+FROM Shohin S LEFT OUTER JOIN  TenpoShohin AS TS
+  ON S.shohin_id = TS.shohin_id ;
+
+-- RIGHT JOINで外部結合
+SELECT
+  TS.tenpo_id, TS.tenpo_mei, TS.shohin_id,
+  S.shohin_mei, S.hanbai_tanka
+FROM TenpoShohin AS TS RIGHT OUTER JOIN Shohin S
+  ON TS.shohin_id = S.shohin_id;
+```
+
+### 3つ以上の結合
+
+```sql
+--在庫商品テーブル作成
+CREATE TABLE ZaikoShohin
+( souko_id		CHAR(4)      NOT NULL,
+  shohin_id     CHAR(4)      NOT NULL,
+  zaiko_suryo	INTEGER      NOT NULL,
+  PRIMARY KEY (souko_id, shohin_id));
+
+--　データ登録
+BEGIN TRANSACTION;
+
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S001',	'0001',	0);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S001',	'0002',	120);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S001',	'0003',	200);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S001',	'0004',	3);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S001',	'0005',	0);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S001',	'0006',	99);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S001',	'0007',	999);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S001',	'0008',	200);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S002',	'0001',	10);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S002',	'0002',	25);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S002',	'0003',	34);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S002',	'0004',	19);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S002',	'0005',	99);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S002',	'0006',	0);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S002',	'0007',	0);
+INSERT INTO ZaikoShohin (souko_id, shohin_id, zaiko_suryo) VALUES ('S002',	'0008',	18);
+
+COMMIT;
+```
+
+```sql
+SELECT
+  TS.tenpo_id, TS.tenpo_mei, TS.shohin_id,
+  S.shohin_mei, S.hanbai_tanka, ZS.zaiko_suryo
+FROM TenpoShohin AS TS INNER JOIN Shohin AS S
+  -- TenpoShohin.shohin_id と Shohin.shohin_id を内部結合
+  ON TS.shohin_id = S.shohin_id
+    INNER JOIN ZaikoShohin AS ZS
+      -- TenpoShohin.shohin_id と ZaikoShohin.shohin_idを内部結合
+      ON TS.shohin_id = ZS.shohin_id
+WHERE ZS.souko_id = 'S001' LIMIT 3;
+ tenpo_id | tenpo_mei | shohin_id |   shohin_mei   | hanbai_tanka | zaiko_suryo
+----------+-----------+-----------+----------------+--------------+-------------
+ 000A     | 東京      | 0001      | Tシャツ        |         1000 |           0
+ 000A     | 東京      | 0002      | 穴あけパンチ   |          500 |         120
+ 000A     | 東京      | 0003      | カッターシャツ |         4000 |         200
+```
+
+### クロス結合
+
+`CROSS JOIN`
+
+- 使われることは稀だが、結合演算の基礎である
+
+```sql
+-- 結合するすべての組み合わせを返す
+-- この場合は104行になる
+SELECT
+  TS.tenpo_id, TS.tenpo_mei, TS.shohin_id, S.shohin_mei, COUNT(TS.tenpo_id)
+FROM TenpoShohin AS TS CROSS JOIN Shohin AS S;
+
+SELECT
+  COUNT(TS.tenpo_id)
+FROM TenpoShohin AS TS CROSS JOIN Shohin AS S;
+```
