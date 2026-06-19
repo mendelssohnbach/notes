@@ -2285,3 +2285,176 @@ SELECT
   COUNT(TS.tenpo_id)
 FROM TenpoShohin AS TS CROSS JOIN Shohin AS S;
 ```
+
+# 高度な処理
+
+## ウィンドウ関数
+
+- ランキング、連番生成などが行える
+- `PARTITION BY` `ORDER BY`
+- **OLAP** 関数とも呼ばれる
+- 集約関数をウィンドウ関数として使える
+- RANK, DENSE, RANK, ROW_NUMBER などウィンドウ専用関数
+
+![PARTITION BYとORDER BYの作用](assets/2026-06-19-13-21-40.png)
+
+### 構文
+
+```sql
+<ウィンドウ関数> OVER ([PARTITION by <列リスト>] ORDER BY <ソート用列リスト>)
+```
+
+### 基本的な使い方
+
+`RANK` レコードの順位を算出
+
+`PARTITION BY` で区切られたレコードの集合を **ウィンドウ**　と呼ぶ
+v
+
+```sql
+-- shohin_bunrui別にhanbai_tankaの安い順にランクキング
+SELECT
+  shohin_mei, shohin_bunrui, hanbai_tanka,
+  -- PARTITION BY 順位を付ける対象の範囲を指定
+  RANK () OVER (PARTITION BY shohin_bunrui
+    -- ORDER BY どの列をどのように順位付けるか指定
+    -- ここでは ASC を省略している
+    ORDER BY hanbai_tanka) as ranking
+FROM Shohin;
+```
+
+### PARTITION BYは指定しなくてもよい
+
+`PARTITION BY` を指定しないとテーブル全体1つのウィンドウとして扱われる
+
+```sql
+SELECT
+  shohin_mei, shohin_bunrui, hanbai_tanka,
+  RANK () OVER (ORDER BY hanbai_tanka) AS ranking
+FROM Shohin;
+```
+
+### 種類
+
+`RANK` 同じランクを算出し、同順位が複数レコード存在する場合、順位飛びが発生する
+`DENSE_RANK` 同じランクを算出し、同順位が複数レコード存在しても順位飛びが発生しない
+`ROW_NUMBER` 一意な連番を付与
+
+```sql
+-- RANK,DENSE_RANK,ROW_NUMBER の比較
+SELECT
+  shohin_mei, shohin_bunrui, hanbai_tanka,
+  RANK () OVER (PARTITION BY hanbai_tanka) AS ranking,
+  DENSE_RANK () OVER (ORDER BY hanbai_tanka) AS dense_ranking,
+  ROW_NUMBER () OVER (ORDER BY hanbai_tanka) AS row_num
+FROM Shohin;
+```
+
+### どこで使うか
+
+- 原則ウィンドウ関数は `SELECT` 句で用いる
+  - `WHERE` 句、 `GROUP BY` 句の処理が終わった結果に対して処理される
+
+### 集約関数をウィンドウ関数として使う
+
+```sql
+-- shohin_id 昇順並び替え、累計を求める
+-- SUM ()内に列名が必須
+SELECT
+  shohin_id, shohin_mei, hanbai_tanka,
+  SUM (hanbai_tanka) OVER (ORDER BY shohin_id) AS current_sum
+FROM Shohin;
+
+-- shohin_id値昇順並び替え、カレント行よりも値が小さいhanbai_tanka の平均金額を求める
+-- SUM ()内に列名が必須
+SELECT
+  shohin_id, shohin_mei, hanbai_tanka,
+  AVG (hanbai_tanka) OVER (ORDER BY shohin_id) AS current_sum
+FROM Shohin;
+```
+
+### 移動平均
+
+**フレーム** ウィンドウの中でさらに集計範囲を指定する機能
+
+- `PRECEDING` 「前に」という意味
+- `FOLLOWING` 「後の」という意味
+
+```sql
+-- 直近3行の移動平均
+SELECT
+  shohin_id, shohin_mei, hanbai_tanka,
+  AVG (hanbai_tanka) OVER (ORDER BY shohin_id
+    ROWS 2 PRECEDING) AS moving_avg
+FROM Shohin;
+```
+
+### フレーム範囲を指定
+
+```sql
+SELECT
+  shohin_id, shohin_mei, hanbai_tanka,
+  ROUND( AVG (hanbai_tanka) OVER (ORDER BY shohin_id), 2) AS current_sum,
+  ROUND( AVG (hanbai_tanka) OVER (ORDER BY shohin_id
+    ROWS 1 PRECEDING), 2) AS two_moving_avg,
+  ROUND( AVG (hanbai_tanka) OVER (ORDER BY shohin_id
+    ROWS 2 PRECEDING), 2) AS three_moving_avg
+FROM Shohin;
+ shohin_id |   shohin_mei   | hanbai_tanka | current_sum | two_moving_avg | three_moving_avg
+-----------+----------------+--------------+-------------+----------------+------------------
+ 0001      | Tシャツ        |         1000 |     1000.00 |        1000.00 |          1000.00
+ 0002      | 穴あけパンチ   |          500 |      750.00 |         750.00 |           750.00
+ 0003      | カッターシャツ |         4000 |     1833.33 |        2250.00 |          1833.33
+ 0004      | 包丁           |         3000 |     2125.00 |        3500.00 |          2500.00
+ 0005      | 圧力鍋         |         6800 |     3060.00 |        4900.00 |          4600.00
+ 0006      | フォーク       |          500 |     2633.33 |        3650.00 |          3433.33
+ 0007      | おろしがね     |          880 |     2382.86 |         690.00 |          2726.67
+ 0008      | ボールペン     |          100 |     2097.50 |         490.00 |           493.33
+```
+
+`FOLLOWING` 使用時の注意事項
+
+- BETWEENの明記が必要
+  - 省略するとエラーになるため、必ず BETWEEN CURRENT ROW AND 1 FOLLOWING のように範囲を明記
+- データ末尾での行数減少
+  - テーブルの下部に進むにつれて、計算対象となる「後ろの行」が減る
+- 並び順（ORDER BY）への依存
+  - データの並び順によって集計に含まれる未来のデータが変わるため、ORDER BY の指定が必須かつ重要になる
+
+### カレントレコードの前後行を集計
+
+`PRECEDING` と `FOLLOWING` を併用する
+
+```sql
+--　カレント行と、その1行前と1行後を集計
+SELECT
+  shohin_id, shohin_mei, hanbai_tanka,
+  AVG (hanbai_tanka) OVER (ORDER BY shohin_id
+    ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS moving_avg
+FROM Shohin;
+ shohin_id |   shohin_mei   | hanbai_tanka |      moving_avg
+-----------+----------------+--------------+-----------------------
+ 0001      | Tシャツ        |         1000 |  750.0000000000000000
+ 0002      | 穴あけパンチ   |          500 | 1833.3333333333333333
+ 0003      | カッターシャツ |         4000 | 2500.0000000000000000
+ 0004      | 包丁           |         3000 | 4600.0000000000000000
+ 0005      | 圧力鍋         |         6800 | 3433.3333333333333333
+ 0006      | フォーク       |          500 | 2726.6666666666666667
+ 0007      | おろしがね     |          880 |  493.3333333333333333
+ 0008      | ボールペン     |          100 |  490.0000000000000000
+```
+
+## 2つのORDER BY
+
+`OVER` 句内の `ORDER BY` 句はウィンドウ関数の計算順序を指定している。結果の並び順には無関係である
+
+```sql
+-- ウィンドウ関数の結果の確実な並び替え
+SELECT
+  shohin_mei, shohin_bunrui, hanbai_tanka,
+  RANK () OVER (ORDER BY hanbai_tanka) AS ranking
+FROM Shohin
+ORDER BY ranking;
+```
+
+## GROUPING演算子
