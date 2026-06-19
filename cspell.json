@@ -71,6 +71,7 @@
     "JINKO",
     "kazu",
     "keyrings",
+    "Kimpanel",
     "lanname",
     "libc",
     "macfoo",
@@ -113,6 +114,7 @@
     "shiire",
     "Shohin",
     "shohinjim",
+    "souko",
     "SQLERRM",
     "SQLSTATE",
     "srand",
@@ -123,6 +125,7 @@
     "systime",
     "sysup",
     "Tenpo",
+    "tenposhohin",
     "timedatectl",
     "timesync",
     "timesyncd",
@@ -140,6 +143,7 @@
     "VIRT",
     "Waydroid",
     "Wireshark",
-    "XMODIFIERS"
+    "XMODIFIERS",
+    "Zaiko"
   ]
 }
