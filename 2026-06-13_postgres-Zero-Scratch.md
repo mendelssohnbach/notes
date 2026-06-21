@@ -2644,6 +2644,6 @@ GROUP BY GROUPING SETS(shohin_bunrui, torokubi);
  商品分類 合計 | 2008-04-28  |       880
 ```
 
-SELECT shohin_id, shohin_mei, hanbai_tanka,
-MAX (hanbai_tanka) OVER (ORDER BY shohin_id) AS current_max_tanka
-FROM Shohin;
+# アプリケーションから接続
+
+未実施
