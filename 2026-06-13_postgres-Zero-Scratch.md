@@ -2458,3 +2458,192 @@ ORDER BY ranking;
 ```
 
 ## GROUPING演算子
+
+- 小計と合計を同時に求められる
+
+### 合計業を一緒に求める
+
+```sql
+-- GROUP BY句では合計行を求められない
+SELECT shohin_bunrui, SUM(hanbai_tanka)
+FROM Shohin
+GROUP BY shohin_bunrui;
+
+-- UNION ALLで合計行と集約結果をくっつける
+SELECT '合計' AS shohin_bunrui, SUM(hanbai_tanka)
+FROM Shohin
+UNION ALL
+SELECT shohin_bunrui, SUM(hanbai_tanka)
+FROM Shohin
+GROUP BY shohin_bunrui;
+ shohin_bunrui |  sum
+---------------+-------
+ 合計          | 16780
+ キッチン用品  | 11180
+ 衣服          |  5000
+ 事務用品      |   600
+```
+
+### ROLLUP
+
+**GROUPING** 演算子の種類
+
+- ROLLUP
+- CUBE
+- GROUPING SETS
+
+`ROLLUP` の使い方
+
+```sql
+-- ROLLUPで合計と小計を一度に求める
+SELECT shohin_bunrui, SUM(hanbai_tanka) AS sum_tanka
+FROM Shohin
+GROUP BY ROLLUP(shohin_bunrui);
+ shohin_bunrui | sum_tanka
+---------------+-----------
+               |     16780
+ キッチン用品  |     11180
+ 衣服          |      5000
+ 事務用品      |       600
+```
+
+```sql
+-- 集約キーに登録日を追加
+SELECT shohin_bunrui, torokubi, SUM(hanbai_tanka) AS sum_tanka
+FROM Shohin
+GROUP BY ROLLUP(shohin_bunrui, torokubi);
+ shohin_bunrui |  torokubi  | sum_tanka
+---------------+------------+-----------
+               |            |     16780 -- 総合計: 超集合行
+ 衣服          |            |      4000
+ キッチン用品  | 2009-01-15 |      6800
+ 衣服          | 2009-09-20 |      1000
+ キッチン用品  | 2008-04-28 |       880
+ 事務用品      | 2009-11-11 |       100
+ 事務用品      | 2009-09-11 |       500
+ キッチン用品  | 2009-09-20 |      3500
+ キッチン用品  |            |     11180 -- 小計(キッチン用品): 超集合行
+ 衣服          |            |      5000 -- 小計(衣服): 超集合行
+ 事務用品      |            |       600 -- 小計(事務用品): 超集合行
+```
+
+### NULLを見分ける
+
+**GROUPING** 関数は超集合行のために生じたNULLなら1、それ以外は2を返す
+
+```sql
+-- GROUPING関数でNULLを判別
+SELECT GROUPING(shohin_bunrui) AS shohin_bunrui,
+  GROUPING(torokubi) AS torokubi, SUM(hanbai_tanka) AS sum_tanka
+FROM Shohin
+GROUP BY ROLLUP(shohin_bunrui, torokubi);
+ shohin_bunrui | torokubi | sum_tanka
+---------------+----------+-----------
+             1 |        1 |     16780
+             0 |        0 |      4000
+             0 |        0 |      6800
+             0 |        0 |      1000
+             0 |        0 |       880
+             0 |        0 |       100
+             0 |        0 |       500
+             0 |        0 |      3500
+             0 |        1 |     11180
+```
+
+```sql
+-- 超集合行のキー値に文字を埋め込む
+SELECT
+  CASE WHEN GROUPING(shohin_bunrui) = 1
+    THEN '商品分類 合計'
+    ELSE shohin_bunrui END As shohin_bunrui,
+  CASE WHEN GROUPING(torokubi) = 1
+    THEN '登録日 合計'
+    -- 結果行 torokubiを可変長文字列に統一する
+    -- これをしないと日付型と文字列型が混在しエラーと成る
+    ELSE CAST(torokubi AS VARCHAR(16)) END AS torokubi,
+  SUM(hanbai_tanka) AS sum_tanka
+FROM Shohin
+GROUP BY ROLLUP(shohin_bunrui, torokubi);
+ shohin_bunrui |  torokubi   | sum_tanka
+---------------+-------------+-----------
+ 商品分類 合計 | 登録日 合計 |     16780
+ 衣服          |             |      4000 -- オリジナルデータがNULL
+ キッチン用品  | 2009-01-15  |      6800
+ 衣服          | 2009-09-20  |      1000
+ キッチン用品  | 2008-04-28  |       880
+ 事務用品      | 2009-11-11  |       100
+ 事務用品      | 2009-09-11  |       500
+ キッチン用品  | 2009-09-20  |      3500
+ キッチン用品  | 登録日 合計 |     11180
+ 衣服          | 登録日 合計 |      5000
+ 事務用品      | 登録日 合計 |       600
+```
+
+### CUBE
+
+```sql
+-- CUBEで可能なすべての組み合わせ
+SELECT
+  CASE WHEN GROUPING(shohin_bunrui) = 1
+    THEN '商品分類 合計'
+    ELSE shohin_bunrui END AS shohin_bunrui,
+  CASE WHEN GROUPING(torokubi) = 1
+    THEN '登録日 合計'
+    ELSE CAST(torokubi AS VARCHAR(16)) END AS torokubi,
+  SUM(hanbai_tanka) AS sum_tanka
+FROM Shohin
+GROUP BY CUBE(shohin_bunrui, torokubi);
+ shohin_bunrui |  torokubi   | sum_tanka
+---------------+-------------+-----------
+ 商品分類 合計 | 登録日 合計 |     16780
+ 衣服          |             |      4000
+ キッチン用品  | 2009-01-15  |      6800
+ 衣服          | 2009-09-20  |      1000
+ キッチン用品  | 2008-04-28  |       880
+ 事務用品      | 2009-11-11  |       100
+ 事務用品      | 2009-09-11  |       500
+ キッチン用品  | 2009-09-20  |      3500
+ キッチン用品  | 登録日 合計 |     11180
+ 衣服          | 登録日 合計 |      5000
+ 事務用品      | 登録日 合計 |       600
+ 商品分類 合計 |             |      4000
+ 商品分類 合計 | 2009-11-11  |       100 -- CUBEで追加: torokubi
+ 商品分類 合計 | 2009-09-20  |      4500
+ 商品分類 合計 | 2009-09-11  |       500
+ 商品分類 合計 | 2009-01-15  |      6800
+ 商品分類 合計 | 2008-04-28  |       880
+(17 rows)
+```
+
+### GROUPING SET
+
+`ROLLUP` や `CUBE` で求めたいつ部のレコードだけを取得
+
+```sql
+-- 商品分類と登録日それぞれを単独で集約キーとする
+SELECT
+  CASE WHEN GROUPING(shohin_bunrui) = 1
+    THEN '商品分類 合計'
+    ELSE shohin_bunrui END AS shohin_bunrui,
+  CASE WHEN GROUPING(torokubi) = 1
+    THEN '登録日 合計'
+    ELSE CAST(torokubi AS VARCHAR(16)) END AS torokubi,
+  SUM(hanbai_tanka) AS sum_tanka
+FROM Shohin
+GROUP BY GROUPING SETS(shohin_bunrui, torokubi);
+ shohin_bunrui |  torokubi   | sum_tanka
+---------------+-------------+-----------
+ キッチン用品  | 登録日 合計 |     11180
+ 衣服          | 登録日 合計 |      5000
+ 事務用品      | 登録日 合計 |       600
+ 商品分類 合計 |             |      4000
+ 商品分類 合計 | 2009-11-11  |       100
+ 商品分類 合計 | 2009-09-20  |      4500
+ 商品分類 合計 | 2009-09-11  |       500
+ 商品分類 合計 | 2009-01-15  |      6800
+ 商品分類 合計 | 2008-04-28  |       880
+```
+
+SELECT shohin_id, shohin_mei, hanbai_tanka,
+MAX (hanbai_tanka) OVER (ORDER BY shohin_id) AS current_max_tanka
+FROM Shohin;
