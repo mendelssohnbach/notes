@@ -40,7 +40,6 @@ $ docker compose version
 
 # sudoコマンドなしでの起動を確認する
 $ docker ps
-
 ```
 
 Docker Desktopのバージョンアップ
@@ -52,9 +51,10 @@ $ sudo apt-get install -y ~/Downloads/docker-desktop-amd64.deb
 Docker Builds の消去
 
 ```terminal
-$ systemctl --user stop docker-desktop
-$ rm -rf ~/.docker/buildx/refs/
-$ rm -f ~/.docker/buildx/activity/desktop-linux
-$ rm -f ~/.docker/buildx/activity/default
-$ systemctl --user start docker-desktop
+# 現在のビルド履歴を一覧表示
+$ docker buildx history ls
+# 特定のビルドを削除
+$ docker buildx history rm <完全なBUILD ID>
+# 削除できたか確認
+$ docker buildx history ls
 ```
