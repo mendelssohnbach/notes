@@ -107,3 +107,93 @@ export default tseslint.config(
   }
 );
 ```
+
+## `class` プロパティの防止
+
+```js
+export default [
+  {
+    plugins: {
+      react,
+    },
+    rules: {
+      // class の代わりに className を強制する（自動修正対応）
+      'react/no-unknown-property': ['error', { ignore: ['class'] }],
+    },
+  },
+];
+```
+
+## `key` 宣言忘れの防止
+
+```js
+export default [
+  {
+    rules: {
+      // 繰り返し要素での key 属性の指定を必須にする
+      'react/jsx-key': [
+        'error',
+        {
+          checkFragmentShorthand: true, // <>...</> にも key が必要なら警告
+          checkKeyMustBeforeSpread: true, // スプレッド展開前の key 指定をチェック
+          warnOnDuplicates: true, // key の重複を警告
+        },
+      ],
+    },
+  },
+];
+```
+
+## まとめ
+
+```js
+import js from '@eslint/js';
+import globals from 'globals';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+
+export default [
+  // 1. 対象外にするフォルダの指定
+  { ignores: ['dist'] },
+
+  // 2. 基本設定とベースルール
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+      },
+    },
+    plugins: {
+      react,
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+
+      // ==========================================
+      // コーディングエラー対策（ここを追加）
+      // ==========================================
+
+      // class の間違いを検知（自動修正対応）
+      'react/no-unknown-property': ['error', { ignore: ['class'] }],
+
+      // map等のループ内での key 属性忘れを検知
+      'react/jsx-key': [
+        'error',
+        {
+          checkFragmentShorthand: true, // <>...</> 内の key 忘れもチェック
+          checkKeyMustBeforeSpread: true, // スプレッド展開時もチェック
+          warnOnDuplicates: true, // key の重複を警告
+        },
+      ],
+    },
+  },
+];
+```
