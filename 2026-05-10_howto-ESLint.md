@@ -197,3 +197,26 @@ export default [
   },
 ];
 ```
+
+## viteプラグイン
+
+インストール
+
+```terminal
+$ npm i -D vite-plugin-eslint2
+```
+
+`vite.config.js` の編集
+
+```js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import eslint from 'vite-plugin-eslint2';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    eslint({ fix: true }), // 開発中に自動修正も試みる
+  ],
+});
+```
