@@ -1,0 +1,96 @@
+{
+  "bashIde.explainshellEndpoint": "http://localhost:5000",
+  "css.lint.unknownAtRules": "ignore",
+  "debug.inlineValues": "on",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.shellcheck": "explicit"
+  },
+  "editor.detectIndentation": false,
+  "editor.foldingImportsByDefault": true,
+  "editor.foldingStrategy": "indentation",
+  "editor.fontSize": 15.5,
+  "editor.formatOnSave": true,
+  "editor.fontFamily": "'UDEV Gothic','Droid Sans Mono', 'monospace', monospace",
+  "editor.fontLigatures": false,
+  "editor.guides.bracketPairs": true,
+  "editor.inlineSuggest.enabled": false,
+  "editor.linkedEditing": true,
+  "editor.wordWrap": "bounded",
+  "eslint.nodePath": "./node_modules/eslint",
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "explorer.compactFolders": false,
+  "files.autoSave": "onFocusChange",
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "html.autoClosingTags": true,
+  "html.format.wrapLineLength": 0,
+  "liveServer.settings.fullReload": true,
+  "markdown-preview-enhanced.printBackground": true,
+  "markuplint.enable": true,
+  "markuplint.debug": false,
+  "markuplint.defaultConfig": {
+    "extends": ["markuplint:recommended"]
+  },
+  "markuplint.hover.accessibility.enable": true,
+  "markuplint.hover.accessibility.ariaVersion": "1.2",
+  "terminal.integrated.copyOnSelection": true,
+  "terminal.integrated.fontFamily": "'FiraCode Nerd Font Mono'",
+  "terminal.integrated.fontLigatures.enabled": true,
+  "terminal.integrated.profiles.linux": {
+    "bash (default)": {
+      "path": "/bin/bash",
+      "args": ["-l"],
+      "icon": "terminal-bash"
+    },
+    "root (bash)": {
+      "path": "/usr/bin/sudo",
+      "args": ["-i"],
+      "icon": "shield"
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash (default)",
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.colorTheme": "Dracula Theme Soft",
+  "workbench.editor.customLabels.patterns": {
+    "**/app/**/{*.jsx,route.js,actions.js}": "🌐 ${dirname(1)}/${dirname} ∙ ${filename}",
+    "**/app/**/{*.tsx,route.ts,actions.ts}": "🌐 ${dirname(1)}/${dirname} ∙ ${filename}",
+    "**/components/**/*": "🧩 ${dirname}/${filename}.${extname}"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "[json]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "vscode.html-language-features",
+    "editor.colorDecorators": true
+  },
+  "[css]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.colorDecorators": true
+  },
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.renderWhitespace": "all",
+    "files.trimTrailingWhitespace": false
+  },
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "on",
+    "strings": "on"
+  },
+  "github.copilot.enable": {
+    "*": false
+  }
+}
