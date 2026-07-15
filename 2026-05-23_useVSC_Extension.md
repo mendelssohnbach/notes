@@ -56,3 +56,66 @@ POST {{baseurl}}/posts
   "userId": 10
 }
 ```
+
+## CURLコマンド
+
+**GET** リクエスト
+
+```terminal
+# タイポを生みやすい方法
+$ curl example.com/contents?page=3&num=10
+# -Gオプションを使った簡単な方法
+$ curl -v -G -d page=3 -d num=10 https://example.com/contents
+```
+
+| オプション | 意味                 |
+| :--------- | :------------------- |
+| `-v`       | 詳細な通信ログを出力 |
+| `-G`       | GETリクエストを送る  |
+| `-d`       | 送信するデータを指定 |
+
+**POST** リクエスト
+
+一般的なフォームデータ
+
+```terminal
+$ curl -v -d "page=3" -d "num=10" https://example.com/contents
+```
+
+| オプション | 意味                 |
+| :--------- | :------------------- |
+| `-v`       | 詳細な通信ログを出力 |
+| `-G`       | GETリクエストを送る  |
+
+次のまとめでよいか？
+
+```terminal
+// headers.txt: header情報
+// @data.json:送信データ
+$ curl -v -X POST -K headers.txt -d @data.json https://example.com
+
+// header情報をコマンドとして直接書く場合
+$ curl -v -X POST -H "Content-Type: application/json" -d @data.json https://example.com
+
+// header情報と送信データをコマンドとして直接書く場合
+$ curl -v -X POST -H "Content-Type: application/json" -d '{"page": 3, "num": 10}' https://example.com
+```
+
+```txt
+# headers.txt の中身の例
+header = "Content-Type: application/json"
+```
+
+### DEV Tools
+
+**Copy as cURL**
+: 現在開いているページに対してブラウザが送ったHTTPリクエストを、curlコマンドとしてコピーする機能
+
+1. DEV Toolsを起動
+2. Networkタブをクリック
+   ![Networkタブ](assets/2026-07-15-15-38-16.png)
+3. `Clear networking log` アイコンをクリック
+   ![Clear networking](assets/2026-07-15-15-41-27.png)
+4. 目的のサイトに接続
+5. 対象のドメインを右クリック>[Copy]>[Copy as cURL]
+   ![Copy as cURL](assets/2026-07-15-15-45-05.png)
