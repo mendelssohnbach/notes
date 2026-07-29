@@ -48,7 +48,7 @@ Docker Desktopのバージョンアップ
 $ sudo apt-get install -y ~/Downloads/docker-desktop-amd64.deb
 ```
 
-Docker Builds の消去
+## Docker Builds の消去
 
 ```terminal
 # 現在のビルド履歴を一覧表示
@@ -57,4 +57,35 @@ $ docker buildx history ls
 $ docker buildx history rm <完全なBUILD ID>
 # 削除できたか確認
 $ docker buildx history ls
+```
+
+## リビルド
+
+```terminal
+$ docker compose down
+# 最新状態の強制取得/過去のビルドデータを利用しない
+$ docker compose build --no-cache
+$ docker compose up -d
+
+
+```
+
+## ロケールの確認
+
+```terminal
+# 現在のロケールを確認
+$ docker compose exec ubuntu-node locale
+```
+
+## インストールパッケージの一覧
+
+**npm** の場合
+
+```terminal
+$ docker exec -it ubuntu_node_dev npm list --depth=0
+# 親子関係を含めてパッケージの一覧を表示
+$ docker exec -it ubuntu_node_dev pipdeptree
+
+# Python pip パッケージの一覧を表示
+$ docker exec -it ubuntu_node_dev pip list
 ```
