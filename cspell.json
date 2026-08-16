@@ -8,15 +8,7 @@
     ".vscode",
     ".vscode-insiders"
   ],
-  "ignoreWords": [
-    "imgtext",
-    "navbtn",
-    "lorem",
-    "ipsum",
-    "dolor",
-    "sit",
-    "amet"
-  ],
+  "ignoreWords": ["imgtext", "navbtn", "lorem", "ipsum", "dolor", "sit", "amet"],
   "words": [
     "abcade",
     "abcdbe",
@@ -145,6 +137,11 @@
     "Waydroid",
     "Wireshark",
     "XMODIFIERS",
-    "Zaiko"
+    "Zaiko",
+    "oxlint",
+    "oxfmt",
+    "oxlintrc",
+    "oxfmtrc",
+    "tsgo"
   ]
 }
