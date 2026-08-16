@@ -3,6 +3,86 @@ tags:
   - Dev
 ---
 
+# ライブラリモード
+
+**Node.js** CLIツールのための環境構築。 **Bun** への以降を推奨。
+
+```terminal
+$ mkdir PROJECT && cd $_
+$ npm init -y
+$ npm install -D vite typescript @types/node
+```
+
+`tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"]
+}
+```
+
+`vite.config.ts`
+
+```ts
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+
+export default defineConfig({
+  build: {
+    // CLI 向けにライブラリモードでビルド
+    lib: {
+      entry: resolve(__dirname, 'src/index.ts'),
+      formats: ['es'], // Node.js で扱いやすい ESM 形式
+      fileName: 'index',
+    },
+    rollupOptions: {
+      // Node.js のネイティブモジュールや依存関係をバンドルから除外
+      external: [
+        /^node:/,
+        'path',
+        'fs',
+        'crypto',
+        // その他インストールするサードパーティ製パッケージがあればここに追加
+      ],
+    },
+    target: 'node18', // 対象とする Node.js バージョン
+    minify: false, // デバッグしやすくするため、必要に応じて無効化
+  },
+});
+```
+
+エントリポイントで `#!/usr/bin/env node` を宣言
+
+```ts
+#!/usr/bin/env node
+
+import { argv } from 'node:process';
+
+function main() {
+  console.log('🚀 Vite 経由でビルドされた Node.js CLI ツールへようこそ！');
+
+  // 引数の取得
+  const args = argv.slice(2);
+  if (args.length > 0) {
+    console.log(`受け取った引数: ${args.join(', ')}`);
+  } else {
+    console.log('引数が指定されていません。');
+  }
+}
+
+main();
+```
+
+`
+
 # React Testing Library
 
 ## プロジェクト作成
@@ -11,6 +91,28 @@ tags:
 $ npm create vite@latest PROJECT_DIR -- --template react
 $ cd PROJECT_DIR
 $ npm install
+```
+
+`package.json` : `type` フィールドと `bin` フィールドを指定
+
+```json
+{
+  "name": "my-vite-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "my-vite-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}
 ```
 
 ## Vitest
