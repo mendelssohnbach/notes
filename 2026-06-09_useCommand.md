@@ -37,3 +37,11 @@ $ touch routes/{index.js,booksRouter.js}
 $ tree . -L 2 -I <無視するディレクトリ名> ignore
 $ tree . -L 2 -I node_modules ignore
 ```
+
+## SESSION_SECRET
+
+セッションシークレットキーの作成
+
+```terminal
+$ openssl rand -hex 32
+```
