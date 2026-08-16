@@ -59,7 +59,9 @@ tags:
     ],
     "typescript/no-floating-promises": "error",
     "typescript/no-namespace": "off",
-    "import/no-cycle": "error"
+    "import/no-cycle": "error",
+    "prefer-template": "error",
+    "no-template-curly-in-string": "error"
   }
 }
 ```
